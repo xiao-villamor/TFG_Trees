@@ -34,11 +34,9 @@ def display_point_cloud(points):
 
 def load_las(file_path):
     # load laz file
-    las_file = pylas.read(file_path)
-    las_file = pylas.convert(las_file)
-
+    las = laspy.read(file_path)
     # get points
-    points = np.column_stack([las_file.x, las_file.y, las_file.z])
+    points = np.vstack((las.x, las.y, las.z)).transpose()
 
     return points
 

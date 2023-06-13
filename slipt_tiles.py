@@ -66,11 +66,11 @@ def split_cloud_into_squares(cloud_points, num_tiles):
 
 
 if __name__ == '__main__':
-    file_path = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_.las"
+    file_path = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_1.las"
     las_file = pylas.read(file_path)
     las_file = pylas.convert(las_file)
 
     # get points
     points = np.column_stack([las_file.x, las_file.y, las_file.z])
 
-    split_cloud_into_squares(points, 2)
+    split_cloud_into_squares(points, 4)

@@ -1,0 +1,16 @@
+{
+  "pipeline": [
+    {
+      "type": "readers.las",
+      "filename":  "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\original.las"
+    },
+       {
+      "type": "filters.crop",
+      "bounds": "([0,100],[0,100], [0,100])",
+      "output": {
+        "filename": "output_square_%i.las",
+        "type": "writers.las"
+      }
+    }
+  ]
+}

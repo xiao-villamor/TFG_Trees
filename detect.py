@@ -5,10 +5,10 @@ from matplotlib.patches import Rectangle
 from scipy.ndimage import maximum_filter, gaussian_filter, median_filter, uniform_filter
 from scipy.spatial import cKDTree
 from sklearn.decomposition import PCA
-from sklearn.linear_model import RANSACRegressor
-from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import RANSACRegressor, LinearRegression
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from skimage.restoration import denoise_bilateral
-
+from sklearn.metrics import r2_score
 import open3d as o3d
 
 from utils import measure_execution_time
@@ -115,7 +115,6 @@ def display_canopy_height_model(canopy_height_model, resolution):
     plt.show()
 
 
-@measure_execution_time
 def detect_trees(canopy_height_model, threshold, filter_size):
     # Apply local maximum filtering to find peaks
     neighborhood_size = (filter_size, filter_size)
@@ -219,6 +218,39 @@ def display_original_cloud_2d(point_cloud, original_coords):
     plt.show()
 
 
+def plot_simulated_trees_3d(tree_indices, cloud_points):
+    # Create an Open3D point cloud object
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(cloud_points)
+    geometries = [pcd]
+
+    # Create a cylinder for each tree location
+    for tree_index in tree_indices:
+        cylinder_height = np.linalg.norm(tree_index[2])
+        cylinder = o3d.geometry.TriangleMesh.create_cylinder(radius=0.4, height=cylinder_height)
+        # color the cylinder brown
+        cylinder.paint_uniform_color([0.5, 0.25, 0])
+        # Translate the cylinder to the tree location respective to the origin 0, 0, 0
+        cylinder.translate(tree_index)
+        cylinder.translate([0, 0, -cylinder_height/2])
+        # set the z value of the cylinder to 0
+        geometries.append(cylinder)
+
+    # create a cone for each tree starting at the tree location minus 10 meters
+    for tree_index in tree_indices:
+        cone = o3d.geometry.TriangleMesh.create_cone(radius=4, height=15)
+        # color the cone green
+        cone.paint_uniform_color([0, 0.5, 0])
+
+        # Translate the cone to the tree location respective to the origin 0, 0, 0
+        cone.translate(tree_index)
+
+        geometries.append(cone)
+
+    # Create an Open3D visualization window and add geometries
+    o3d.visualization.draw_geometries(geometries)
+
+
 def plot_tree_locations(tree_indices, canopy_height_model):
     # Create x and y coordinates for the tree locations
     x_coords = tree_indices[1]
@@ -277,6 +309,49 @@ def plot_tree_locations_3d(tree_indices, canopy_height_model):
     plt.show()
 
 
+def slice_and_get_centroids(points, slice_height):
+    # Sort points by height in ascending order
+    sorted_points = points[points[:, 2].argsort()]
+
+    # Define slice height and number of slices
+    min_height = sorted_points[0, 2]
+    max_height = sorted_points[-1, 2]
+    num_slices = int((max_height - min_height) / slice_height) + 1
+
+    centroids = []  # Store centroids for each slice
+
+    for i in range(num_slices):
+        # Define lower and upper height boundaries for the current slice
+        lower_height = min_height + i * slice_height
+        upper_height = lower_height + slice_height
+
+        # Extract points within the height range of the current slice
+        slice_points = sorted_points[(sorted_points[:, 2] >= lower_height) &
+                                     (sorted_points[:, 2] < upper_height)]
+
+        # plot the slice
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111, projection='3d')
+        # ax.scatter(slice_points[:, 0], slice_points[:, 1], slice_points[:, 2], c='red', marker='o')
+
+        # Set labels and title
+        # ax.set_xlabel('X')
+        # ax.set_ylabel('Y')
+        # ax.set_zlabel('Z')
+        # ax.set_title('Centroids')
+
+        # Show the plot
+        # plt.show()
+
+        # Calculate the central point of the slice if there are points in the slice
+        if slice_points.shape[0] > 0:
+            centroid = np.mean(slice_points, axis=0)
+            # Append centroid to the list
+            centroids.append(centroid)
+
+    return np.array(centroids)
+
+
 def compute_original_coordinates(tree_indices, resolution, min_coords, chm):
     # Extract the x and y indices of the tree locations
     x_indices = tree_indices[1]
@@ -295,23 +370,86 @@ def compute_original_coordinates(tree_indices, resolution, min_coords, chm):
     return original_coords
 
 
-def detect_tubular_form(point_cloud, query_coords, radius_threshold):
-    # plot the point cloud in 3d
-    fig = plt.figure(figsize=(8, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(point_cloud[:, 0], point_cloud[:, 1], point_cloud[:, 2], c='b', marker='.', s=1)
-
+def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
     # create a list to save the locations of the trees that are tubular
     tubular_tree_locations = []
 
     for query_coord in query_coords:
         # Filter points within a certain radius threshold from the query coordinate
 
-        # Calculates the Euclidean distances between each point in the point cloud and the query coordinate using
-        distances = np.linalg.norm(point_cloud - query_coord, axis=1)
+        # Calculate the distances in 2D space (only considering x and y coordinates)
+        distances = np.linalg.norm(point_cloud[:, :2] - query_coord[:2], axis=1)
 
         # Find the indices of the points that are within the radius threshold
         filtered_indices = np.where(distances <= radius_threshold)[0]
+
+        # Extract the points that are within the radius threshold
+        filtered_points = point_cloud[filtered_indices]
+
+        if len(filtered_points) < 3:
+           # print("No points found within the radius threshold for the query coordinate:", query_coord)
+            continue
+        else:
+            # printe a random point from the filtered points
+
+            centroids = slice_and_get_centroids(filtered_points, 4)
+
+            # plot the centroids the format is a array of 3 values
+            # check if centroids contains more than 3 points and not NaN
+            if len(centroids) > 3 and not np.isnan(centroids).any():
+
+                # Perform linear regression
+                degree = 2  # 1 for line, 2 or higher for curves
+
+                # create polynomial features
+                poly_features = PolynomialFeatures(degree=degree)
+                x_poly = poly_features.fit_transform(centroids[:, 0].reshape(-1, 1))
+
+                regression_model = LinearRegression()
+                regression_model.fit(x_poly, centroids[:, 1].reshape(-1, 1))
+
+                y_pred = regression_model.predict(x_poly)
+
+                r_squared = r2_score(centroids[:, 1].reshape(-1, 1), y_pred)
+                is_line = r_squared > 0.05  # Adjust the threshold as needed
+
+                # Print the assessment result
+                if is_line:
+                  #  print("The centroids form a line.")
+                    tubular_tree_locations.append(query_coord)
+                else:
+                    #print("The centroids do not form a line.")
+
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111, projection='3d')
+                    ax.scatter(centroids[:, 0], centroids[:, 1], centroids[:, 2], c='red', marker='o')
+                    ax.scatter(filtered_points[:, 0], filtered_points[:, 1], filtered_points[:, 2], c='blue',
+                               marker='o')
+
+                    # Set labels and title
+                    ax.set_xlabel('X')
+                    ax.set_ylabel('Y')
+                    ax.set_zlabel('Z')
+
+                    # Show the plot
+                    plt.show()
+
+    return tubular_tree_locations
+
+
+def detect_tubular_form(point_cloud, query_coords, radius_threshold):
+    # create a list to save the locations of the trees that are tubular
+    tubular_tree_locations = []
+
+    for query_coord in query_coords:
+        # Filter points within a certain radius threshold from the query coordinate
+
+        # Calculate the distances in 2D space (only considering x and y coordinates)
+        distances = np.linalg.norm(point_cloud[:, :2] - query_coord[:2], axis=1)
+
+        # Find the indices of the points that are within the radius threshold
+        filtered_indices = np.where(distances <= radius_threshold)[0]
+
         # Extract the points that are within the radius threshold
         filtered_points = point_cloud[filtered_indices]
 
@@ -319,8 +457,23 @@ def detect_tubular_form(point_cloud, query_coords, radius_threshold):
             print("No points found within the radius threshold for the query coordinate:", query_coord)
             continue
         else:
-           # print("Found", len(filtered_points), "points within the radius threshold for the query coordinate:")
+            # print("Found", len(filtered_points), "points within the radius threshold for the query coordinate:")
 
+            # Create a 3D scatter plot
+            # fig = plt.figure()
+            # ax = fig.add_subplot(111, projection='3d')
+            # ax.scatter(x, y, z, c='blue', marker='o')
+            # print the query coordinate
+            # ax.scatter(query_coord[0], query_coord[1], query_coord[2], c='red', marker='o')
+
+            # Set labels and title
+            # ax.set_xlabel('X')
+            # ax.set_ylabel('Y')
+            # ax.set_zlabel('Z')
+            # ax.set_title('Filtered Points')
+
+            # Show the plot
+            # plt.show()
             # Fit a line to the filtered points
             ransac = RANSACRegressor()
             ransac.fit(filtered_points[:, 2].reshape(-1, 1), filtered_points[:, 2])
@@ -328,6 +481,12 @@ def detect_tubular_form(point_cloud, query_coords, radius_threshold):
             # Extract the inlier points
             inlier_mask = ransac.inlier_mask_
             inlier_points = filtered_points[inlier_mask]
+
+            centroids = slice_and_get_centroids(filtered_points, 8)
+            print("Found", len(centroids), "centroids for the query coordinate:")
+            print(centroids)
+
+            # Create a 3D scatter plot of the centroids
 
             # Evaluate the fit and make a decision if it corresponds to a tubular form
             if len(inlier_points) > 0:
@@ -352,16 +511,29 @@ def detect_tubular_form(point_cloud, query_coords, radius_threshold):
             else:
                 print("No inlier points found for the query coordinate:", query_coord)
 
-
     return tubular_tree_locations
 
 
 if __name__ == '__main__':
-    file_path = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_3.las"
+
+    # Open cloud of points with ground
+    file_path = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_7.las"
     # Read the LAS/LAZ file
     las = laspy.read(file_path)
-
     point_cloud = np.vstack((las.x, las.y, las.z)).transpose()
+
+    # Open cloud of points without ground
+    file_path_no_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\hag_no_ground.las"
+    # Read the LAS/LAZ file
+    las_no_ground = laspy.read(file_path_no_ground)
+    point_cloud_no_ground = np.vstack((las_no_ground.x, las_no_ground.y, las_no_ground.z)).transpose()
+
+    # Open cloud of points only ground
+    file_path_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_7_ground.las"
+    # Read the LAS/LAZ file
+    las_ground = laspy.read(file_path_ground)
+
+    point_cloud_ground = np.vstack((las_ground.x, las_ground.y, las_ground.z)).transpose()
 
     # normalize the point cloud
     scaler = StandardScaler()
@@ -376,9 +548,10 @@ if __name__ == '__main__':
 
     # perform chm algorithm
     chm = compute_canopy_height_model(points_scaled2, resolution)
+    chm = gaussian_chm(chm, 2)
 
-    threshold = 1  # Adjust this value to control tree detection sensitivity
-    filter_sizer = 60  # Adjust this value to control tree detection sensitivity
+    threshold = 0.2  # Adjust this value to control tree detection sensitivity
+    filter_sizer = 40  # Adjust this value to control tree detection sensitivity
 
     tree_indices = detect_trees(chm, threshold, filter_sizer)
 
@@ -397,12 +570,19 @@ if __name__ == '__main__':
     # unnormalize the point cloud and the original coordinates
     points_scaled_2 = scaler.inverse_transform(points_scaled)
     original_coords_2 = scaler.inverse_transform(original_coords)
+    # display_original_cloud_with_dot(point_cloud_no_ground, original_coords_2)
 
-    detection = detect_tubular_form(point_cloud, original_coords_2, 1.8)
+    #
+
+    detection = detect_tubular_form2(point_cloud_no_ground, original_coords_2, 4)
+
+    # print the number of trees detected and the number of trees that are tubular
+    print("Number of trees detected:", len(detection[0]))
+
 
     # print the number of trees detected and the number of trees that are tubular
     print("Number of trees detected:", len(tree_indices_2[0]))
     print("Number of trees that are tubular:", len(detection))
 
     # plot the point cloud in 3d
-    display_original_cloud_with_dot(point_cloud, detection)
+    plot_simulated_trees_3d(detection, point_cloud_ground)

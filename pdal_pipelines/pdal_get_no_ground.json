@@ -1,0 +1,13 @@
+[
+    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\original_hag.las",
+    {
+        "type":"filters.csf"
+    },
+    {
+        "type":"filters.range",
+        "limits":"Classification[1:1]"
+    },
+
+    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\test_tiles\\original_hag_no_ground.las"
+
+]

@@ -1,0 +1,13 @@
+[
+    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\test_tiles\\part_7.las",
+    {
+        "type":"filters.csf"
+    },
+    {
+        "type":"filters.range",
+        "limits":"Classification[2:2]"
+    },
+
+    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\test_tiles\\part_7_ground.las"
+
+]

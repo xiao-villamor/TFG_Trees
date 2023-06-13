@@ -1,0 +1,20 @@
+[
+    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\original.las",
+    {
+        "type":"filters.returns",
+        "groups":"last,only"
+    },
+     {
+        "type":"filters.csf"
+    },
+    {
+        "type":"filters.hag_delaunay"
+    },
+    {
+        "type":"filters.ferry",
+        "dimensions":"HeightAboveGround=>Z"
+    },
+
+    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\original_hag.las"
+
+]
