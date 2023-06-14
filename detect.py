@@ -232,7 +232,7 @@ def plot_simulated_trees_3d(tree_indices, cloud_points):
         cylinder.paint_uniform_color([0.5, 0.25, 0])
         # Translate the cylinder to the tree location respective to the origin 0, 0, 0
         cylinder.translate(tree_index)
-        cylinder.translate([0, 0, -cylinder_height/2])
+        cylinder.translate([0, 0, -cylinder_height / 2])
         # set the z value of the cylinder to 0
         geometries.append(cylinder)
 
@@ -373,6 +373,7 @@ def compute_original_coordinates(tree_indices, resolution, min_coords, chm):
 def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
     # create a list to save the locations of the trees that are tubular
     tubular_tree_locations = []
+    no_tubular_tree_locations = []
 
     for query_coord in query_coords:
         # Filter points within a certain radius threshold from the query coordinate
@@ -387,12 +388,12 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
         filtered_points = point_cloud[filtered_indices]
 
         if len(filtered_points) < 3:
-           # print("No points found within the radius threshold for the query coordinate:", query_coord)
+            # print("No points found within the radius threshold for the query coordinate:", query_coord)
             continue
         else:
-            # printe a random point from the filtered points
+            # print a random point from the filtered points
 
-            centroids = slice_and_get_centroids(filtered_points, 4)
+            centroids = slice_and_get_centroids(filtered_points, 1)
 
             # plot the centroids the format is a array of 3 values
             # check if centroids contains more than 3 points and not NaN
@@ -411,15 +412,12 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
                 y_pred = regression_model.predict(x_poly)
 
                 r_squared = r2_score(centroids[:, 1].reshape(-1, 1), y_pred)
-                is_line = r_squared > 0.05  # Adjust the threshold as needed
+                is_line = r_squared > 0.2  # Adjust the threshold as needed
 
                 # Print the assessment result
                 if is_line:
-                  #  print("The centroids form a line.")
+                    # print("The centroids form a line.")
                     tubular_tree_locations.append(query_coord)
-                else:
-                    #print("The centroids do not form a line.")
-
                     fig = plt.figure()
                     ax = fig.add_subplot(111, projection='3d')
                     ax.scatter(centroids[:, 0], centroids[:, 1], centroids[:, 2], c='red', marker='o')
@@ -433,6 +431,9 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
 
                     # Show the plot
                     plt.show()
+                else:
+                    print("The centroids do not form a line.")
+                    no_tubular_tree_locations.append(query_coord)
 
     return tubular_tree_locations
 
@@ -515,21 +516,20 @@ def detect_tubular_form(point_cloud, query_coords, radius_threshold):
 
 
 if __name__ == '__main__':
-
     # Open cloud of points with ground
-    file_path = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_7.las"
+    file_path = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_3_hag.las"
     # Read the LAS/LAZ file
     las = laspy.read(file_path)
     point_cloud = np.vstack((las.x, las.y, las.z)).transpose()
 
     # Open cloud of points without ground
-    file_path_no_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\hag_no_ground.las"
+    file_path_no_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_3_hag_no_ground.las"
     # Read the LAS/LAZ file
     las_no_ground = laspy.read(file_path_no_ground)
     point_cloud_no_ground = np.vstack((las_no_ground.x, las_no_ground.y, las_no_ground.z)).transpose()
 
     # Open cloud of points only ground
-    file_path_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_7_ground.las"
+    file_path_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_3_hag.las"
     # Read the LAS/LAZ file
     las_ground = laspy.read(file_path_ground)
 
@@ -547,8 +547,9 @@ if __name__ == '__main__':
     resolution = 0.005  # meters
 
     # perform chm algorithm
-    chm = compute_canopy_height_model(points_scaled2, resolution)
-    chm = gaussian_chm(chm, 2)
+    chm_or = compute_canopy_height_model(points_scaled2, resolution)
+
+    chm = gaussian_chm(chm_or, 2)
 
     threshold = 0.2  # Adjust this value to control tree detection sensitivity
     filter_sizer = 40  # Adjust this value to control tree detection sensitivity
@@ -556,7 +557,7 @@ if __name__ == '__main__':
     tree_indices = detect_trees(chm, threshold, filter_sizer)
 
     # plot_point_cloud_2d(point_cloud
-
+    plot_tree_locations(tree_indices, chm_or)
     plot_tree_locations(tree_indices, chm)
     plot_tree_locations_3d(tree_indices, chm)
 
@@ -570,7 +571,7 @@ if __name__ == '__main__':
     # unnormalize the point cloud and the original coordinates
     points_scaled_2 = scaler.inverse_transform(points_scaled)
     original_coords_2 = scaler.inverse_transform(original_coords)
-    # display_original_cloud_with_dot(point_cloud_no_ground, original_coords_2)
+    display_original_cloud_with_dot(point_cloud_no_ground, original_coords_2)
 
     #
 
@@ -578,7 +579,6 @@ if __name__ == '__main__':
 
     # print the number of trees detected and the number of trees that are tubular
     print("Number of trees detected:", len(detection[0]))
-
 
     # print the number of trees detected and the number of trees that are tubular
     print("Number of trees detected:", len(tree_indices_2[0]))
