@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
 from scipy.ndimage import maximum_filter, gaussian_filter, median_filter, uniform_filter
 from scipy.spatial import cKDTree
+from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.linear_model import RANSACRegressor, LinearRegression
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
@@ -329,25 +330,86 @@ def slice_and_get_centroids(points, slice_height):
         slice_points = sorted_points[(sorted_points[:, 2] >= lower_height) &
                                      (sorted_points[:, 2] < upper_height)]
 
-        # plot the slice
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111, projection='3d')
-        # ax.scatter(slice_points[:, 0], slice_points[:, 1], slice_points[:, 2], c='red', marker='o')
-
-        # Set labels and title
-        # ax.set_xlabel('X')
-        # ax.set_ylabel('Y')
-        # ax.set_zlabel('Z')
-        # ax.set_title('Centroids')
-
-        # Show the plot
-        # plt.show()
-
         # Calculate the central point of the slice if there are points in the slice
         if slice_points.shape[0] > 0:
             centroid = np.mean(slice_points, axis=0)
             # Append centroid to the list
             centroids.append(centroid)
+
+    return np.array(centroids)
+
+
+def slice_and_get_blobs(points, slice_height):
+    # Sort points by height in ascending order
+    global r_squared_slice, centroids_slice
+    sorted_points = points[points[:, 2].argsort()]
+
+    # Define slice height and number of slices
+    min_height = sorted_points[0, 2]
+    max_height = sorted_points[-1, 2]
+    num_slices = int((max_height - min_height) / slice_height) + 1
+
+    centroids = []  # Store centroids for each slice
+
+    for i in range(num_slices):
+        # Define lower and upper height boundaries for the current slice
+        lower_height = min_height + i * slice_height
+        upper_height = lower_height + slice_height
+
+        # Extract points within the height range of the current slice
+        slice_points = sorted_points[(sorted_points[:, 2] >= lower_height) &
+                                     (sorted_points[:, 2] < upper_height)]
+
+        # cluster the points in the slice
+        if slice_points.shape[0] > 0:
+            # cluster the points
+            cluster = DBSCAN(eps=0.7).fit(slice_points[:, :2])
+            # get the labels
+            labels = cluster.labels_
+            # get the number of clusters
+            n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+            print('Number of clusters: {}'.format(n_clusters))
+            # get the unique labels
+            unique_labels = set(labels)
+
+            r_squared_slice = []
+            centroids_slice = []
+
+            # if there is more than one cluster and the number of centroids is greater than 1
+            if n_clusters > 1 and len(centroids) > 1:
+                # get the centroid of each cluster
+                for label in unique_labels:
+                    if label != -1:
+                        # get the points in the cluster
+                        cluster_points = slice_points[labels == label]
+                        # compute the centroid
+                        centroid = np.mean(cluster_points, axis=0)
+                        centroids_slice.append(centroid)
+
+                        # create a new list of centroids with the current centroid and the previous centroids
+                        other_centroids = np.concatenate((centroids, centroids_slice), axis=0)
+
+
+                        degree = 2  # 1 for line, 2 or higher for curves
+
+                        # create polynomial features
+                        poly_features = PolynomialFeatures(degree=degree)
+                        x_poly = poly_features.fit_transform(other_centroids[:, 0].reshape(-1, 1))
+
+                        regression_model = LinearRegression()
+                        regression_model.fit(x_poly, other_centroids[:, 1].reshape(-1, 1))
+
+                        y_pred = regression_model.predict(x_poly)
+
+                        r_squared_slice = r2_score(other_centroids[:, 1].reshape(-1, 1), y_pred)
+
+
+
+                        best_cluster_idx = np.argmax(r_squared_slice)
+                        best_centroid = centroids_slice[best_cluster_idx]
+                        centroids.append(best_centroid)
+            else:
+                centroids.append(np.mean(slice_points, axis=0))
 
     return np.array(centroids)
 
@@ -387,13 +449,13 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
         # Extract the points that are within the radius threshold
         filtered_points = point_cloud[filtered_indices]
 
-        if len(filtered_points) < 3:
+        if len(filtered_points) < 30:
             # print("No points found within the radius threshold for the query coordinate:", query_coord)
             continue
         else:
             # print a random point from the filtered points
 
-            centroids = slice_and_get_centroids(filtered_points, 1)
+            centroids = slice_and_get_blobs(filtered_points, 1)
 
             # plot the centroids the format is a array of 3 values
             # check if centroids contains more than 3 points and not NaN
@@ -428,11 +490,27 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
                     ax.set_xlabel('X')
                     ax.set_ylabel('Y')
                     ax.set_zlabel('Z')
+                    ax.set_title('Centroids and points marked')
 
                     # Show the plot
                     plt.show()
+
                 else:
                     print("The centroids do not form a line.")
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111, projection='3d')
+                    ax.scatter(centroids[:, 0], centroids[:, 1], centroids[:, 2], c='red', marker='o')
+                    ax.scatter(filtered_points[:, 0], filtered_points[:, 1], filtered_points[:, 2], c='blue',
+                               marker='o')
+
+                    # Set labels and title
+                    ax.set_xlabel('X')
+                    ax.set_ylabel('Y')
+                    ax.set_zlabel('Z')
+                    ax.set_title('Centroids and points not marked')
+
+                    # Show the plot
+                    plt.show()
                     no_tubular_tree_locations.append(query_coord)
 
     return tubular_tree_locations
@@ -517,19 +595,19 @@ def detect_tubular_form(point_cloud, query_coords, radius_threshold):
 
 if __name__ == '__main__':
     # Open cloud of points with ground
-    file_path = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_3_hag.las"
+    file_path = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_7.las"
     # Read the LAS/LAZ file
     las = laspy.read(file_path)
     point_cloud = np.vstack((las.x, las.y, las.z)).transpose()
 
     # Open cloud of points without ground
-    file_path_no_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_3_hag_no_ground.las"
+    file_path_no_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\hag_no_ground.las"
     # Read the LAS/LAZ file
     las_no_ground = laspy.read(file_path_no_ground)
     point_cloud_no_ground = np.vstack((las_no_ground.x, las_no_ground.y, las_no_ground.z)).transpose()
 
     # Open cloud of points only ground
-    file_path_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_3_hag.las"
+    file_path_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_7_ground.las"
     # Read the LAS/LAZ file
     las_ground = laspy.read(file_path_ground)
 
@@ -559,7 +637,6 @@ if __name__ == '__main__':
     # plot_point_cloud_2d(point_cloud
     plot_tree_locations(tree_indices, chm_or)
     plot_tree_locations(tree_indices, chm)
-    plot_tree_locations_3d(tree_indices, chm)
 
     min_coords = np.min(points_scaled, axis=0)
     max_coords = np.max(points_scaled, axis=0)
