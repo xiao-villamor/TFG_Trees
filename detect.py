@@ -1,3 +1,5 @@
+import csv
+
 import laspy
 import numpy as np
 from scipy.ndimage import maximum_filter
@@ -8,9 +10,11 @@ from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.metrics import r2_score
 from anytree import Node, RenderTree
 import open3d as o3d
+from skspatial.objects import Line, Points
 
 from detect_utils import check_linearity, gaussian_chm, compute_original_coordinates
-from visualization_utils import display_original_cloud_with_centroids, plot_tree_locations, display_slice_with_centroids
+from visualization_utils import display_original_cloud_with_centroids, plot_tree_locations, \
+    display_slice_with_centroids, display_centroids_in_2d
 
 linearity_threshold = 0.02
 min_tree_samples = 40
@@ -173,7 +177,7 @@ def slice_and_get_points_tree(points, slice_height):
 
     prev_nodes = [root]  # Store nodes from the previous level
 
-    for i in range(num_slices - 2):
+    for i in range(num_slices - 4):
 
         subLevel = 0  # Reset sub-level to 0 for each slice
 
@@ -255,8 +259,26 @@ def slice_and_get_points_tree(points, slice_height):
     all_centroids = []
 
     for pre, fill, node in RenderTree(root):
-        if (node.name != "0"):
+        print("%s%s  %s" % (pre, node.name, node.score))
+        if node.name != "0":
             all_centroids.append(node.centroid)
+    print(all_centroids)
+
+    file = r"C:\Users\Xiao\PycharmProjects\pythonProject\csv\centroids.csv"
+
+    pc = []
+
+    with open(file, 'a', newline='') as file:
+        writer = csv.writer(file)
+        for c in all_centroids:
+            writer.writerow(c)
+            pc.append(c)
+        writer.writerow("\n")
+    # display in 2d the centroids x and y
+
+
+
+
 
     # display_slice_with_centroids(points, all_centroids)
 
@@ -280,6 +302,7 @@ def slice_and_get_points_tree(points, slice_height):
 
     # print("Number of centroids: ", len(best_centroids))
     # print("Best centroids: ", best_centroids)
+    display_centroids_in_2d(np.array(best_centroids))
 
     return best_centroids
 
@@ -312,6 +335,9 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
             # check if centroids contains more than 3 points and not NaN
             if len(centroids) > 4 and not np.isnan(centroids).any():
 
+                # Mirar diferentes librerias para hacer la regresion lineal
+                # Guardar datos de la regresion lineal en un archivo
+
                 # Perform linear regression
                 degree = 1  # 1 for line, 2 or higher for curves
 
@@ -326,7 +352,9 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
 
                 r_squared = r2_score(centroids[:, 1].reshape(-1, 1), y_pred)
                 is_line = r_squared > linearity_threshold  # Adjust the threshold as needed
+                line_bestFit = Line.best_fit(centroids)
 
+                print(line_bestFit.sum_squares(centroids))
                 # model = build_model()
                 # model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
                 # model.fit(x_poly, centroids[:, 1].reshape(-1, 1), epochs=100, verbose=0)

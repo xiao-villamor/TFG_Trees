@@ -2,7 +2,6 @@ import numpy as np
 from scipy.ndimage import gaussian_filter, median_filter, uniform_filter
 from skimage.restoration import denoise_bilateral
 import tensorflow as tf
-from tensorflow.keras import layers
 
 def gaussian_chm(chm_gaussian, sigma):
     # Apply Gaussian smoothing to the CHM

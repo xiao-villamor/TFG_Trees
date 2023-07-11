@@ -197,6 +197,22 @@ def display_slice_with_centroids(point_cloud, centroids_detected, detected):
     o3d.visualization.draw_geometries(geometries)
 
 
+def display_centroids_in_2d(centroids):
+    # Extract x and y coordinates from the point cloud
+    x_coords = centroids[:, 0]
+    y_coords = centroids[:, 2]
+
+    # Create a scatter plot of the points
+    plt.scatter(x_coords, y_coords, c='b', s=1)
+
+    # Set plot title and labels
+    plt.title("Centroids (2D)")
+    plt.xlabel("X")
+    plt.ylabel("Y")
+
+    # Show the plot
+    plt.show()
+
 def display_original_cloud_2d(point_cloud, original_coords):
     # Extract x and y coordinates from the point cloud
     x_coords = point_cloud[:, 0]

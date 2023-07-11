@@ -12,6 +12,8 @@ from utils import load_las
 def test_detection():
     point_cloud = load_las(r"C:\Users\Xiao\PycharmProjects\pythonProject\part_2.las")
 
+    # open csv file
+
     scaler = StandardScaler()
     points_scaled = scaler.fit_transform(point_cloud)
     points_scaled2 = points_scaled
