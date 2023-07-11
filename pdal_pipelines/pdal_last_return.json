@@ -1,9 +1,6 @@
 [
-    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\original.las",
-    {
-        "type":"filters.returns",
-        "groups":"last,only"
-    },
+    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\test_tiles\\part_3.las",
+
      {
         "type":"filters.csf"
     },
@@ -15,6 +12,6 @@
         "dimensions":"HeightAboveGround=>Z"
     },
 
-    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\original_hag.las"
+    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\test_tiles\\part_3_hag.las"
 
 ]

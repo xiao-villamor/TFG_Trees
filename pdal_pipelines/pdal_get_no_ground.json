@@ -1,5 +1,5 @@
 [
-    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\original_hag.las",
+    "C:\\Users\\Xiao\\PycharmProjects\\pythonProject\\part_2.las",
     {
         "type":"filters.csf"
     },
@@ -8,6 +8,6 @@
         "limits":"Classification[1:1]"
     },
 
-    "D:\\TFG\\Data\\tiles\\luxemburgo\\luxemburgo\\samples\\test_tiles\\original_hag_no_ground.las"
+    "C:\\Users\\Xiao\\PycharmProjects\\pythonProject\\part_2_no_ground.las"
 
 ]
