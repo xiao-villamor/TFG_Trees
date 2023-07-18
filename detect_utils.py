@@ -1,7 +1,12 @@
+from datetime import datetime
+
+import csv
+
 import numpy as np
 from scipy.ndimage import gaussian_filter, median_filter, uniform_filter
 from skimage.restoration import denoise_bilateral
 import tensorflow as tf
+
 
 def gaussian_chm(chm_gaussian, sigma):
     # Apply Gaussian smoothing to the CHM
@@ -32,7 +37,6 @@ def bilateral_filter_chm(chm_bilateral, sigma_spatial, sigma_range):
 
 
 def check_linearity(points):
-
     # Calculate the slope between consecutive points
     slopes = []
     for i in range(len(points) - 1):
@@ -50,16 +54,73 @@ def check_linearity(points):
     return linearity_score
 
 
+def calculate_r_squared(points):
+    if len(points) < 3:
+        return 0.0
+
+        # Extract x, y, and z coordinates from the points
+    x = np.array([point[0] for point in points])
+    y = np.array([point[1] for point in points])
+    z = np.array([point[2] for point in points])
+
+    # Create design matrix
+    X = np.column_stack((x, y, np.ones(len(points))))
+
+    # Fit a linear regression plane
+    coefficients, _, _, _ = np.linalg.lstsq(X, z, rcond=None)
+
+    # Calculate the predicted z values on the plane
+    predicted_z = np.dot(X, coefficients)
+
+    # Calculate the sum of squared errors
+    ss_total = np.sum((z - np.mean(z)) ** 2)
+    ss_residual = np.sum((z - predicted_z) ** 2)
+
+    # Calculate R-squared
+    r_squared = 1.0 - (ss_residual / ss_total)
+
+    return r_squared
+
+
+def old_calculate_r_squared(points):
+    if len(points) < 2:
+        return 0.0
+
+    # Extract x, y, and z coordinates from the points
+    x = np.array([point[0] for point in points])
+    y = np.array([point[1] for point in points])
+    z = np.array([point[2] for point in points])
+
+    # Fit a linear regression plane
+    coefficients = np.polyfit(x, y, 1)
+    slope_x, intercept_x = coefficients
+    coefficients = np.polyfit(x, z, 1)
+    slope_z, intercept_z = coefficients
+
+    # Calculate the predicted y and z values on the plane
+    predicted_y = slope_x * x + intercept_x
+    predicted_z = slope_z * x + intercept_z
+
+    # Calculate the sum of squared errors
+    ss_total = np.sum((y - np.mean(y)) ** 2 + (z - np.mean(z)) ** 2)
+    ss_residual = np.sum((y - predicted_y) ** 2 + (z - predicted_z) ** 2)
+
+    # Calculate R-squared
+    r_squared = 1.0 - (ss_residual / ss_total)
+
+    return r_squared
+
+
 def check_accuracy(points):
     # load the csv with the expected tree locations
-    expected_tree_locations = np.loadtxt(r'C:\Users\Xiao\PycharmProjects\pythonProject\groundT\part_1.las.csv', delimiter=',')
+    file = 'part_1'
+    expected_tree_locations = np.loadtxt(r'C:\Users\Xiao\PycharmProjects\pythonProject\groundT\part_1.las.csv',
+                                         delimiter=',')
     pcl = []
 
     for point in points:
         x = point[0]
         y = point[1]
-        # print('point')
-        # print(x, y)
 
         for expected_tree_location in expected_tree_locations:
             x_expected = expected_tree_location[0]
@@ -76,15 +137,25 @@ def check_accuracy(points):
                 break
     # print(len(pcl))
     # get the number of points that are trees
-    num_points_trees = len(pcl)
+    num_points_trees_detected = len(pcl)
 
     # get the number of points that are not trees
-    num_points_not_trees = len(points) - num_points_trees
+    num_points_not_trees = len(points) - num_points_trees_detected
 
     # get the number of points that are trees from the csv
     num_points_trees = expected_tree_locations.shape[0]
 
-    # return the accuracy
+    # get the actual timestamp
+    now = datetime.now()
+
+    with open(f"metrics-{file}-{now}.csv", "w", newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Num of Trees fom Ground Truth", "Num of Trees detected", "Accuracy",
+                         "Location of the Points Ground Truth", "Location of the Detected Trees"])
+        writer.writerow(
+            [num_points_trees, num_points_trees_detected, num_points_trees / (num_points_trees + num_points_not_trees),
+             expected_tree_locations, pcl])
+
     return num_points_trees / (num_points_trees + num_points_not_trees)
 
 
@@ -104,11 +175,3 @@ def compute_original_coordinates(tree_indices, resolution, min_coords, chm):
     original_coords = np.vstack((x_coords, y_coords, z_coords)).transpose()
 
     return original_coords
-
-
-def build_model():
-    model = tf.keras.Sequential()
-    model.add(layers.Dense(64, activation='relu', input_shape=(2,)))
-    model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(1, activation='sigmoid'))
-    return model

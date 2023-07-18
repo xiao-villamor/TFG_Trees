@@ -49,9 +49,9 @@ def plot_tree_locations(tree_indices, canopy_height_model):
     # rotate the point cloud
 
     # Mark the tree locations with a tiny red dot
-    for x, y in zip(x_coords, y_coords):
-        rect = Rectangle((x, y), 3, 3, color='r', fill=False)
-        ax.add_patch(rect)
+    # for x, y in zip(x_coords, y_coords):
+     #   rect = Rectangle((x, y), 3, 3, color='r', fill=False)
+     #   ax.add_patch(rect)
 
     # Set labels and title
     ax.set_xlabel('X')
@@ -213,22 +213,26 @@ def display_centroids_in_2d(centroids):
     # Show the plot
     plt.show()
 
-def display_original_cloud_2d(point_cloud, original_coords):
-    # Extract x and y coordinates from the point cloud
-    x_coords = point_cloud[:, 0]
-    y_coords = point_cloud[:, 1]
+def display_original_cloud_2d(tree_indices, canopy_height_model):
+    # Create x and y coordinates for the tree locations
+    x_coords = tree_indices[1]
+    y_coords = tree_indices[0]
 
-    # Create a scatter plot of the points
-    plt.scatter(x_coords, y_coords, c='b', s=1)
+    # Plot the canopy height model
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.imshow(canopy_height_model, cmap='viridis')
 
-    # Create a red dot for each tree location
-    for coords in original_coords:
-        plt.scatter(coords[0], coords[1], c='r', s=1)
+    # rotate the point cloud
 
-    # Set plot title and labels
-    plt.title("Original Point Cloud (2D)")
-    plt.xlabel("X")
-    plt.ylabel("Y")
+    # Mark the tree locations with a tiny red dot
+    for x, y in zip(x_coords, y_coords):
+        rect = Rectangle((x, y), 3, 3, color='r', fill=False)
+        ax.add_patch(rect)
+
+    # Set labels and title
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_title('Tree Locations')
 
     # Show the plot
     plt.show()

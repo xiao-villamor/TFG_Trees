@@ -10,7 +10,7 @@ from utils import load_las
 
 
 def test_detection():
-    point_cloud = load_las(r"C:\Users\Xiao\PycharmProjects\pythonProject\part_2.las")
+    point_cloud = load_las(r"C:\Users\Xiao\PycharmProjects\pythonProject\part_1.las")
 
     # open csv file
 
@@ -39,11 +39,11 @@ def test_detection():
     # plot_tree_locations(tree_indices, chm_or)
     plot_tree_locations(tree_indices, chm)
     # Open cloud of points without ground
-    file_path_no_ground = r"C:\Users\Xiao\PycharmProjects\pythonProject\part_2_no_ground.las"
+    file_path_no_ground = r"C:\Users\Xiao\PycharmProjects\pythonProject\part_1_no_ground.las"
     # Read the LAS/LAZ file
     point_cloud_no_ground = load_las(file_path_no_ground)
 
-    detection2 = detect_tubular_form2(point_cloud_no_ground, original_coords_2, 3)
+    detection2 = detect_tubular_form2(point_cloud_no_ground, original_coords_2, 3,1)
     # display_original_cloud_with_dot(point_cloud_no_ground, tree_indices ,"purple")
     # plot_simulated_trees_o3d(detection2, point_cloud_no_ground)
     print("accuracy: " + str(check_accuracy(detection2) * 100) + "%")

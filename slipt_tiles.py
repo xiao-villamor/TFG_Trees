@@ -45,7 +45,7 @@ def split_cloud_into_squares(cloud_points, num_tiles):
 
     # Save each part as a separate LAS file
     for i, part in enumerate(split_tiles):
-        outfile = f"part_{i + 1}.las"
+        outfile = f"D:\TFG\Data\\tiles\luxemburgo\\new\part_{i + 1}.las"
 
         # Extract coordinates from each part
         x = part[:, 0]
@@ -53,7 +53,7 @@ def split_cloud_into_squares(cloud_points, num_tiles):
         z = part[:, 2]  # assuming 3D points
 
         # Create a new LAS file
-        out_las = laspy.create(file_version="1.2", point_format=2)
+        out_las = laspy.create(file_version="1.4", point_format=5)
 
         # Set the point coordinates
         out_las.x = x
@@ -66,11 +66,11 @@ def split_cloud_into_squares(cloud_points, num_tiles):
 
 
 if __name__ == '__main__':
-    file_path = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_1.las"
+    file_path = r"D:\TFG\Data\tiles\luxemburgo\new\no_ground_hag.las"
     las_file = pylas.read(file_path)
     las_file = pylas.convert(las_file)
 
     # get points
     points = np.column_stack([las_file.x, las_file.y, las_file.z])
 
-    split_cloud_into_squares(points, 4)
+    split_cloud_into_squares(points, 12)

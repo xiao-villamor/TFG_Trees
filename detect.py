@@ -12,9 +12,10 @@ from anytree import Node, RenderTree
 import open3d as o3d
 from skspatial.objects import Line, Points
 
-from detect_utils import check_linearity, gaussian_chm, compute_original_coordinates
+from detect_utils import check_linearity, gaussian_chm, compute_original_coordinates, calculate_r_squared
 from visualization_utils import display_original_cloud_with_centroids, plot_tree_locations, \
-    display_slice_with_centroids, display_centroids_in_2d
+    display_slice_with_centroids, display_centroids_in_2d, display_canopy_height_model, display_original_cloud_2d, \
+    display_cloud
 
 linearity_threshold = 0.02
 min_tree_samples = 40
@@ -22,6 +23,7 @@ tree_detection_threshold = 0.2
 filter_sizer = 70  # Adjust this value to control tree detection sensitivity
 heightMap_resolution = 0.005  # meters
 slice_height = 2  # meters
+r_squared_threshold = 0.02
 
 
 def compute_canopy_height_model(point_cloud_height_model, resolution):
@@ -224,11 +226,7 @@ def slice_and_get_points_tree(points, slice_height):
                                     tree_centroids.append(parent_node.centroid)
                                 parent_node = parent_node.parent
 
-                            if len(tree_centroids) < 3:
-                                score = 1
-                                # print("Not enough centroids")
-                            else:
-                                score = check_linearity(np.array(tree_centroids)[:, :2])
+                            score = calculate_r_squared(np.array(tree_centroids))
                             node = Node(str(level) + "-" + str(subLevel), parent=node, score=score, centroid=centroid)
                             temp_nodes.append(node)
                     subLevel += 1
@@ -244,11 +242,7 @@ def slice_and_get_points_tree(points, slice_height):
                             tree_centroids.append(parent_node.centroid)
                         parent_node = parent_node.parent
 
-                    if len(tree_centroids) < 3:
-                        score = 1
-                        # print("Not enough centroids")
-                    else:
-                        score = check_linearity(np.array(tree_centroids)[:, :2])
+                    score = calculate_r_squared(np.array(tree_centroids))
                     node = Node(str(level) + "-" + str(subLevel), parent=node, score=score, centroid=centroid)
                     temp_nodes.append(node)
 
@@ -274,12 +268,6 @@ def slice_and_get_points_tree(points, slice_height):
             writer.writerow(c)
             pc.append(c)
         writer.writerow("\n")
-    # display in 2d the centroids x and y
-
-
-
-
-
     # display_slice_with_centroids(points, all_centroids)
 
     best_score = 0
@@ -300,14 +288,10 @@ def slice_and_get_points_tree(points, slice_height):
         else:
             break
 
-    # print("Number of centroids: ", len(best_centroids))
-    # print("Best centroids: ", best_centroids)
-    display_centroids_in_2d(np.array(best_centroids))
-
     return best_centroids
 
 
-def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
+def detect_tubular_form2(point_cloud, query_coords, radius_threshold,num_slices):
     # create a list to save the locations of the trees that are tubular
     tubular_tree_locations = []
     no_tubular_tree_locations = []
@@ -328,6 +312,7 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
             pcd = o3d.geometry.PointCloud()
             pcd.points = o3d.utility.Vector3dVector(filtered_points)
 
+
             centroids = slice_and_get_points_tree(filtered_points, slice_height)
 
             centroids = np.array(centroids)
@@ -335,35 +320,18 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
             # check if centroids contains more than 3 points and not NaN
             if len(centroids) > 4 and not np.isnan(centroids).any():
 
-                # Mirar diferentes librerias para hacer la regresion lineal
-                # Guardar datos de la regresion lineal en un archivo
+                r2 = calculate_r_squared(centroids)
 
-                # Perform linear regression
-                degree = 1  # 1 for line, 2 or higher for curves
+                is_line = r2 > r_squared_threshold
 
-                # create polynomial features
-                poly_features = PolynomialFeatures(degree=degree)
-                x_poly = poly_features.fit_transform(centroids[:, 0].reshape(-1, 1))
-
-                regression_model = LinearRegression()
-                regression_model.fit(x_poly, centroids[:, 1].reshape(-1, 1))
-
-                y_pred = regression_model.predict(x_poly)
-
-                r_squared = r2_score(centroids[:, 1].reshape(-1, 1), y_pred)
-                is_line = r_squared > linearity_threshold  # Adjust the threshold as needed
-                line_bestFit = Line.best_fit(centroids)
-
-                print(line_bestFit.sum_squares(centroids))
-                # model = build_model()
-                # model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-                # model.fit(x_poly, centroids[:, 1].reshape(-1, 1), epochs=100, verbose=0)
                 if is_line:
-                    display_slice_with_centroids(filtered_points, centroids, True)
+                    print("detected tree at: ", query_coord, " with r2: ", r2)
+                    #o3d.visualization.draw_geometries([pcd])
+                    #display_slice_with_centroids(filtered_points, centroids, True)
                     tubular_tree_locations.append(query_coord)
                 else:
-                    print(r_squared)
-                    display_slice_with_centroids(filtered_points, centroids, False)
+                    print("not detected tree at: ", query_coord, " with r2: ", r2)
+                    #display_slice_with_centroids(filtered_points, centroids, False)
                     no_tubular_tree_locations.append(query_coord)
 
     # print(tubular_tree_locations)
@@ -393,24 +361,7 @@ def detect_tubular_form(point_cloud, query_coords, radius_threshold):
             print("No points found within the radius threshold for the query coordinate:", query_coord)
             continue
         else:
-            # print("Found", len(filtered_points), "points within the radius threshold for the query coordinate:")
 
-            # Create a 3D scatter plot
-            # fig = plt.figure()
-            # ax = fig.add_subplot(111, projection='3d')
-            # ax.scatter(x, y, z, c='blue', marker='o')
-            # print the query coordinate
-            # ax.scatter(query_coord[0], query_coord[1], query_coord[2], c='red', marker='o')
-
-            # Set labels and title
-            # ax.set_xlabel('X')
-            # ax.set_ylabel('Y')
-            # ax.set_zlabel('Z')
-            # ax.set_title('Filtered Points')
-
-            # Show the plot
-            # plt.show()
-            # Fit a line to the filtered points
             ransac = RANSACRegressor()
             ransac.fit(filtered_points[:, 2].reshape(-1, 1), filtered_points[:, 2])
 
@@ -453,7 +404,7 @@ def detect_tubular_form(point_cloud, query_coords, radius_threshold):
 if __name__ == '__main__':
     # Open cloud of points with ground
     # file_path = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_7.las"
-    file_path = r"/part_1.las"
+    file_path = r"C:\Users\Xiao\PycharmProjects\pythonProject/part_1.las"
 
     # Read the LAS/LAZ file
     las = laspy.read(file_path)
@@ -461,13 +412,13 @@ if __name__ == '__main__':
 
     # Open cloud of points without ground
     # file_path_no_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\hag_no_ground.las"
-    file_path_no_ground = r"/part_1_no_ground.las"
+    file_path_no_ground = r"C:\Users\Xiao\PycharmProjects\pythonProject/part_1_no_ground.las"
     # Read the LAS/LAZ file
     las_no_ground = laspy.read(file_path_no_ground)
     point_cloud_no_ground = np.vstack((las_no_ground.x, las_no_ground.y, las_no_ground.z)).transpose()
 
     # Open cloud of points only ground
-    file_path_ground = r"/part_1_no_ground.las"
+    file_path_ground = r"C:\Users\Xiao\PycharmProjects\pythonProject/part_1_no_ground.las"
     # Read the LAS/LAZ file
     las_ground = laspy.read(file_path_ground)
 
@@ -485,16 +436,20 @@ if __name__ == '__main__':
     # perform chm algorithm
     chm_or = compute_canopy_height_model(points_scaled2, heightMap_resolution)
 
+    display_canopy_height_model(chm_or, heightMap_resolution)
+    display_original_cloud_2d(chm_or, points_scaled2)
+
     chm = gaussian_chm(chm_or, 2)
 
     tree_indices = detect_trees(chm, tree_detection_threshold, filter_sizer)
 
     print("Found", len(tree_indices[0]), "tree locations in first Step.")
 
-    # plot_point_cloud_2d(point_cloud
-    # plot_tree_locations(tree_indices, chm_or)
-    plot_tree_locations(tree_indices, chm)
-
+    #plot_point_cloud_2d(point_cloud
+    plot_tree_locations(tree_indices, chm_or)
+    plot_tree_locations(tree_indices, chm_or)
+    #plot_tree_locations(tree_indices, chm)
+    display_cloud(point_cloud)
     min_coords = np.min(points_scaled, axis=0)
     max_coords = np.max(points_scaled, axis=0)
 

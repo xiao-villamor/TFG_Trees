@@ -1,5 +1,5 @@
 [
-    "C:\\Users\\Xiao\\PycharmProjects\\pythonProject\\part_2.las",
+    "D:\\TFG\\Data\\tiles\\luxemburgo\\new\\LIDAR2019_NdP_67500_136500_EPSG2169.laz",
     {
         "type":"filters.csf"
     },
@@ -8,6 +8,6 @@
         "limits":"Classification[1:1]"
     },
 
-    "C:\\Users\\Xiao\\PycharmProjects\\pythonProject\\part_2_no_ground.las"
+    "D:\\TFG\\Data\\tiles\\luxemburgo\\new\\no_ground.las"
 
 ]
