@@ -153,9 +153,9 @@ def display_original_cloud_with_centroids(point_cloud, centroids_detected, centr
 
     # Create a red dot for each tree location
     for coords in centroids_detected:
-        dot = o3d.geometry.TriangleMesh.create_sphere(radius=0.3)
-        # color the dot green
-        dot.paint_uniform_color([0, 1, 0])
+        dot = o3d.geometry.TriangleMesh.create_sphere(radius=0.9)
+        # color the dot purple
+        dot.paint_uniform_color([0, 0, 0])
 
         # Translate the dot to the tree location respective to the origin 0, 0, 0
         dot.translate(coords)
@@ -163,7 +163,7 @@ def display_original_cloud_with_centroids(point_cloud, centroids_detected, centr
         geometries.append(dot)
 
     for c in centroids_not_detected:
-        dot = o3d.geometry.TriangleMesh.create_sphere(radius=0.3)
+        dot = o3d.geometry.TriangleMesh.create_sphere(radius=0.9)
         # color the dot red
         dot.paint_uniform_color([1, 0, 0])
         # Translate the dot to the tree location respective to the origin 0, 0, 0

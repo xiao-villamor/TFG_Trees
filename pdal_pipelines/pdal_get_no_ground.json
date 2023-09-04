@@ -1,5 +1,5 @@
 [
-    "D:\\TFG\\Data\\tiles\\luxemburgo\\new\\LIDAR2019_NdP_67500_136500_EPSG2169.laz",
+    "D:\\Data\\Datatest\\Data 2\\LIDAR2019_NdP_81500_82500_EPSG2169_hag_last_return.las",
     {
         "type":"filters.csf"
     },
@@ -8,6 +8,6 @@
         "limits":"Classification[1:1]"
     },
 
-    "D:\\TFG\\Data\\tiles\\luxemburgo\\new\\no_ground.las"
+    "D:\\Data\\Datatest\\Data 2\\LIDAR2019_NdP_81500_82500_EPSG2169_hag_last_return_no_ground.las"
 
 ]

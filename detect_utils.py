@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import csv
@@ -111,12 +112,19 @@ def old_calculate_r_squared(points):
     return r_squared
 
 
-def check_accuracy(points):
+def check_accuracy(points, file):
     # load the csv with the expected tree locations
-    file = 'part_1'
-    expected_tree_locations = np.loadtxt(r'C:\Users\Xiao\PycharmProjects\pythonProject\groundT\part_1.las.csv',
-                                         delimiter=',')
+
+    #fileD = "D:\Data\Datatest\Data 1\LIDAR2019_NdP_57000_105000_EPSG2169\groundT\\" + file
+    fileD = "D:\Data\Datatest\Data 2\LIDAR2019_NdP_81500_82500_EPSG2169\groundT\\" + file
+
+
+    expected_tree_locations = np.loadtxt(fileD, delimiter=',')
+    num_trees = expected_tree_locations.shape[0]
+    #print(num_trees)
+
     pcl = []
+
 
     for point in points:
         x = point[0]
@@ -133,31 +141,56 @@ def check_accuracy(points):
             if abs(x - x_expected) < 25 and abs(y - y_expected) < 25:
                 pcl.append(point)
                 # delete the expected tree location from expected_tree_locations
-                # print('found a tree')
+                expected_tree_locations = np.delete(expected_tree_locations, indices[0][0], 0)
                 break
-    # print(len(pcl))
-    # get the number of points that are trees
-    num_points_trees_detected = len(pcl)
 
-    # get the number of points that are not trees
-    num_points_not_trees = len(points) - num_points_trees_detected
+    # Number of points that are trees and detected  (TP)
+    TP = len(pcl)
 
-    # get the number of points that are trees from the csv
-    num_points_trees = expected_tree_locations.shape[0]
+    # FP  number of points that are not trees but detected as trees
+    FP = len(points) - TP
+
+    # FN number of points that are trees but not detected as trees
+    FN = num_trees - TP
+
+    # TN number of points that are not trees and not detected as trees
+
+
+    precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
+    recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+
+    # Calculate accuracy
+    accuracy = TP / (TP + FP + FN) if (TP + FP + FN) > 0 else 0.0
+
 
     # get the actual timestamp
     now = datetime.now()
 
-    with open(f"metrics-{file}-{now}.csv", "w", newline='') as f:
+
+    #directory = r'D:\Data\Datatest\Data 1\LIDAR2019_NdP_57000_105000_EPSG2169\Results'
+    directory = r'D:\Data\Datatest\Data 2\LIDAR2019_NdP_81500_82500_EPSG2169\Results'
+    file_path = os.path.join(directory, file + 'accuracy.csv')
+
+    with open(file_path, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(["Num of Trees fom Ground Truth", "Num of Trees detected", "Accuracy",
-                         "Location of the Points Ground Truth", "Location of the Detected Trees"])
-        writer.writerow(
-            [num_points_trees, num_points_trees_detected, num_points_trees / (num_points_trees + num_points_not_trees),
-             expected_tree_locations, pcl])
+        writer.writerow(["Accuracy"])
+        writer.writerow([accuracy])
+        writer.writerow(["True Positives"])
+        writer.writerow([TP])
+        writer.writerow(["False Positives"])
+        writer.writerow([FP])
+        writer.writerow(["False Negatives"])
+        writer.writerow([FN])
+        writer.writerow(["Expected Trees"])
+        writer.writerow([num_trees])
+        writer.writerow(["f1_score"])
+        writer.writerow([f1_score])
+        writer.writerow(["Date"])
+        writer.writerow([now.strftime("%d/%m/%Y %H:%M:%S")])
 
-    return num_points_trees / (num_points_trees + num_points_not_trees)
-
+    # return all the values
+    return accuracy, TP, FP, FN, num_trees, f1_score, precision, recall
 
 def compute_original_coordinates(tree_indices, resolution, min_coords, chm):
     # Extract the x and y indices of the tree locations

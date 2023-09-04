@@ -3,14 +3,14 @@ from sklearn.preprocessing import StandardScaler
 
 from visualization_utils import plot_tree_locations
 from detect_utils import check_accuracy
-from detect import compute_canopy_height_model, gaussian_chm, detect_trees, compute_original_coordinates, \
+from detect import compute_canopy_height_model, gaussian_chm, detect_trees_in_max, compute_original_coordinates, \
     detect_tubular_form2
 
 from utils import load_las
 
 
 def test_detection():
-    point_cloud = load_las(r"C:\Users\Xiao\PycharmProjects\pythonProject\part_1.las")
+    point_cloud = load_las(r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_3.las")
 
     # open csv file
 
@@ -27,7 +27,7 @@ def test_detection():
     threshold = 0.3  # Adjust this value to control tree detection sensitivity
     filter_sizer = 105  # Adjust this value to control tree detection sensitivity
 
-    tree_indices = detect_trees(chm, threshold, filter_sizer)
+    tree_indices = detect_trees_in_max(chm, threshold, filter_sizer)
 
     max_coords = np.max(points_scaled, axis=0)
 
@@ -39,13 +39,18 @@ def test_detection():
     # plot_tree_locations(tree_indices, chm_or)
     plot_tree_locations(tree_indices, chm)
     # Open cloud of points without ground
-    file_path_no_ground = r"C:\Users\Xiao\PycharmProjects\pythonProject\part_1_no_ground.las"
+    file_path_no_ground = r"D:\TFG\Data\tiles\luxemburgo\luxemburgo\samples\test_tiles\part_3_hag_no_ground.las"
     # Read the LAS/LAZ file
+
     point_cloud_no_ground = load_las(file_path_no_ground)
 
     detection2 = detect_tubular_form2(point_cloud_no_ground, original_coords_2, 3,1)
     # display_original_cloud_with_dot(point_cloud_no_ground, tree_indices ,"purple")
     # plot_simulated_trees_o3d(detection2, point_cloud_no_ground)
-    print("accuracy: " + str(check_accuracy(detection2) * 100) + "%")
+
+    file = "C:\Users\Xiao\PycharmProjects\pythonProject\groundT\part_1.las.csv"
+    #file = 'C:\\Users\\Xiao\\PycharmProjects\\pythonProject\\groundT\\part_1.las.csv'
+
+    print("accuracy: " + str(check_accuracy(detection2, file) * 100) + "%")
 
     assert len(detection2) == 12

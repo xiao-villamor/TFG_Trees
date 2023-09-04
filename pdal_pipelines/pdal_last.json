@@ -1,11 +1,11 @@
 [
-    "D:\\TFG\\Data\\tiles\\luxemburgo\\new\\LIDAR2019_NdP_67500_136500_EPSG2169.laz",
+    "D:\\Data\\Datatest\\Data 2\\LIDAR2019_NdP_81500_82500_EPSG2169_hag.las",
 
     {
         "type":"filters.returns",
-        "groups":"last"
+        "groups":"last,only"
     },
 
-    "D:\\TFG\\Data\\tiles\\luxemburgo\\new\\original_hag.las"
+    "D:\\Data\\Datatest\\Data 2\\LIDAR2019_NdP_81500_82500_EPSG2169_hag_last_return.las"
 
 ]

@@ -12,18 +12,18 @@ from anytree import Node, RenderTree
 import open3d as o3d
 from skspatial.objects import Line, Points
 
-from detect_utils import check_linearity, gaussian_chm, compute_original_coordinates, calculate_r_squared
+from detect_utils import check_linearity, gaussian_chm, compute_original_coordinates, calculate_r_squared, \
+    check_accuracy
 from visualization_utils import display_original_cloud_with_centroids, plot_tree_locations, \
-    display_slice_with_centroids, display_centroids_in_2d, display_canopy_height_model, display_original_cloud_2d, \
-    display_cloud
+    display_canopy_height_model, display_original_cloud_2d, \
+    display_cloud, display_slice_with_centroids
 
-linearity_threshold = 0.02
 min_tree_samples = 40
-tree_detection_threshold = 0.2
-filter_sizer = 70  # Adjust this value to control tree detection sensitivity
+tree_detection_threshold = 0.1
+filter_sizer = 120  # Adjust this value to control tree detection sensitivity
 heightMap_resolution = 0.005  # meters
 slice_height = 2  # meters
-r_squared_threshold = 0.02
+r_squared_threshold = 0.1
 
 
 def compute_canopy_height_model(point_cloud_height_model, resolution):
@@ -52,7 +52,7 @@ def compute_canopy_height_model(point_cloud_height_model, resolution):
     return canopy_height_model
 
 
-def detect_trees(canopy_height_model, threshold, filter_size):
+def detect_trees_in_max(canopy_height_model, threshold, filter_size):
     # Apply local maximum filtering to find peaks
     neighborhood_size = (filter_size, filter_size)
     local_max = maximum_filter(canopy_height_model, footprint=np.ones(neighborhood_size), mode='constant')
@@ -62,106 +62,6 @@ def detect_trees(canopy_height_model, threshold, filter_size):
     tree_indexes = np.where(tree_mask)
 
     return tree_indexes
-
-
-def slice_and_get_centroids(points, slice_height):
-    # Sort points by height in ascending order
-    sorted_points = points[points[:, 2].argsort()]
-
-    # Define slice height and number of slices
-    min_height = sorted_points[0, 2]
-    max_height = sorted_points[-1, 2]
-    num_slices = int((max_height - min_height) / slice_height) + 1
-
-    centroids = []  # Store centroids for each slice
-
-    for i in range(num_slices):
-        # Define lower and upper height boundaries for the current slice
-        lower_height = min_height + i * slice_height
-        upper_height = lower_height + slice_height
-
-        # Extract points within the height range of the current slice
-        slice_points = sorted_points[(sorted_points[:, 2] >= lower_height) &
-                                     (sorted_points[:, 2] < upper_height)]
-
-        # Calculate the central point of the slice if there are points in the slice
-        if slice_points.shape[0] > 0:
-            centroid = np.mean(slice_points, axis=0)
-            # Append centroid to the list
-            centroids.append(centroid)
-
-    return np.array(centroids)
-
-
-def slice_and_get_blobs(points, slice_height):
-    # Sort points by height in ascending order
-    global r_squared_slice, centroids_slice
-    sorted_points = points[points[:, 2].argsort()]
-
-    # Define slice height and number of slices
-    min_height = sorted_points[0, 2]
-    max_height = sorted_points[-1, 2]
-    num_slices = int((max_height - min_height) / slice_height) + 1
-
-    centroids = []  # Store centroids for each slice
-
-    for i in range(num_slices - 6):
-        # Define lower and upper height boundaries for the current slice
-        lower_height = min_height + i * slice_height
-        upper_height = lower_height + slice_height
-
-        # Extract points within the height range of the current slice
-        slice_points = sorted_points[(sorted_points[:, 2] >= lower_height) &
-                                     (sorted_points[:, 2] < upper_height)]
-
-        # cluster the points in the slice
-        if slice_points.shape[0] > 0:
-            # cluster the points
-            cluster = DBSCAN(eps=0.7).fit(slice_points[:, :2])
-            # get the labels
-            labels = cluster.labels_
-            # get the number of clusters
-            n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-            # get the unique labels
-            unique_labels = set(labels)
-
-            r_squared_slice = []
-            centroids_slice = []
-
-            # if there is more than one cluster and the number of centroids is greater than 1
-            if n_clusters > 1 and len(centroids) > 1:
-                # get the centroid of each cluster
-                for label in unique_labels:
-                    if label != -1:
-                        # get the points in the cluster
-                        cluster_points = slice_points[labels == label]
-                        # compute the centroid
-                        centroid = np.mean(cluster_points, axis=0)
-                        centroids_slice.append(centroid)
-
-                        # create a new list of centroids with the current centroid and the previous centroids
-                        other_centroids = np.concatenate((centroids, centroids_slice), axis=0)
-
-                        # degree = 1
-
-                        # create polynomial features
-                        # poly_features = PolynomialFeatures(degree=degree)
-                        # x_poly = poly_features.fit_transform(other_centroids[:, 0].reshape(-1, 1))
-
-                        # regression_model = LinearRegression()
-                        # regression_model.fit(x_poly, other_centroids[:, 1].reshape(-1, 1))
-
-                        # y_pred = regression_model.predict(x_poly)
-
-                        # r_squared_slice = r2_score(other_centroids[:, 1].reshape(-1, 1), y_pred)
-                        r_squared_slice = check_linearity(np.array(centroids)[:, :2])
-                        best_cluster_idx = np.argmax(r_squared_slice)
-                        best_centroid = centroids_slice[best_cluster_idx]
-                        centroids.append(best_centroid)
-            else:
-                centroids.append(np.mean(slice_points, axis=0))
-
-    return np.array(centroids)
 
 
 def slice_and_get_points_tree(points, slice_height):
@@ -249,26 +149,12 @@ def slice_and_get_points_tree(points, slice_height):
             prev_nodes = temp_nodes
             level += 1
 
-    # get a list of all the centroids
     all_centroids = []
 
     for pre, fill, node in RenderTree(root):
-        print("%s%s  %s" % (pre, node.name, node.score))
         if node.name != "0":
             all_centroids.append(node.centroid)
-    print(all_centroids)
 
-    file = r"C:\Users\Xiao\PycharmProjects\pythonProject\csv\centroids.csv"
-
-    pc = []
-
-    with open(file, 'a', newline='') as file:
-        writer = csv.writer(file)
-        for c in all_centroids:
-            writer.writerow(c)
-            pc.append(c)
-        writer.writerow("\n")
-    # display_slice_with_centroids(points, all_centroids)
 
     best_score = 0
     best_node = None
@@ -278,10 +164,10 @@ def slice_and_get_points_tree(points, slice_height):
         if node.score > best_score:
             best_score = node.score
             best_node = node
-    # print("Best score: ", best_score)
-    # print("Best node: ", best_node.name)
 
-    while best_node.parent is not None:
+    while True:
+        if best_node is None or best_node.parent is None:
+            break  # Break the loop if either best_node or its parent is None
         if len(best_node.parent.centroid) > 0:
             best_centroids.append(best_node.parent.centroid)
             best_node = best_node.parent
@@ -291,7 +177,7 @@ def slice_and_get_points_tree(points, slice_height):
     return best_centroids
 
 
-def detect_tubular_form2(point_cloud, query_coords, radius_threshold,num_slices):
+def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
     # create a list to save the locations of the trees that are tubular
     tubular_tree_locations = []
     no_tubular_tree_locations = []
@@ -303,15 +189,14 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold,num_slices)
 
         # Find the indices of the points that are within the radius threshold
         filtered_indices = np.where(distances <= radius_threshold)[0]
-
         filtered_points = point_cloud[filtered_indices]
+
         if len(filtered_points) < min_tree_samples:
             # print("No points found within the radius threshold for the query coordinate:", query_coord)
             continue
         else:
             pcd = o3d.geometry.PointCloud()
             pcd.points = o3d.utility.Vector3dVector(filtered_points)
-
 
             centroids = slice_and_get_points_tree(filtered_points, slice_height)
 
@@ -325,80 +210,22 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold,num_slices)
                 is_line = r2 > r_squared_threshold
 
                 if is_line:
-                    print("detected tree at: ", query_coord, " with r2: ", r2)
+                    #print("detected tree at: ", query_coord, " with r2: ", r2)
                     #o3d.visualization.draw_geometries([pcd])
                     #display_slice_with_centroids(filtered_points, centroids, True)
                     tubular_tree_locations.append(query_coord)
                 else:
-                    print("not detected tree at: ", query_coord, " with r2: ", r2)
+                   # print("not detected tree at: ", query_coord, " with r2: ", r2)
                     #display_slice_with_centroids(filtered_points, centroids, False)
                     no_tubular_tree_locations.append(query_coord)
 
     # print(tubular_tree_locations)
     # print(no_tubular_tree_locations)
-    display_original_cloud_with_centroids(point_cloud, tubular_tree_locations, no_tubular_tree_locations)
+    #display_original_cloud_with_centroids(point_cloud, tubular_tree_locations, no_tubular_tree_locations)
 
     return tubular_tree_locations
 
 
-def detect_tubular_form(point_cloud, query_coords, radius_threshold):
-    # create a list to save the locations of the trees that are tubular
-    tubular_tree_locations = []
-
-    for query_coord in query_coords:
-        # Filter points within a certain radius threshold from the query coordinate
-
-        # Calculate the distances in 2D space (only considering x and y coordinates)
-        distances = np.linalg.norm(point_cloud[:, :2] - query_coord[:2], axis=1)
-
-        # Find the indices of the points that are within the radius threshold
-        filtered_indices = np.where(distances <= radius_threshold)[0]
-
-        # Extract the points that are within the radius threshold
-        filtered_points = point_cloud[filtered_indices]
-
-        if len(filtered_points) < 3:
-            print("No points found within the radius threshold for the query coordinate:", query_coord)
-            continue
-        else:
-
-            ransac = RANSACRegressor()
-            ransac.fit(filtered_points[:, 2].reshape(-1, 1), filtered_points[:, 2])
-
-            # Extract the inlier points
-            inlier_mask = ransac.inlier_mask_
-            inlier_points = filtered_points[inlier_mask]
-
-            centroids = slice_and_get_blobs(filtered_points, 8)
-            print("Found", len(centroids), "centroids for the query coordinate:")
-            print(centroids)
-
-            # Create a 3D scatter plot of the centroids
-
-            # Evaluate the fit and make a decision if it corresponds to a tubular form
-            if len(inlier_points) > 0:
-                x = inlier_points[:, 0]
-                y = inlier_points[:, 1]
-                z = inlier_points[:, 2]
-
-                ransac.fit(np.column_stack((x, y)), z)
-
-                # Calculate the residuals of the inlier points
-                residuals = np.abs(ransac.predict(np.column_stack((x, y))) - z)
-                max_residual = np.max(residuals)
-
-                # Determine the threshold for classifying as tubular form
-                threshold_tubular = 1.4  # Adjust this threshold based on your data
-
-                if max_residual < threshold_tubular:
-                    print("Tubular form detected for the query coordinate:", query_coord)
-                    # save the query coordinate
-                    tubular_tree_locations.append(query_coord)
-
-            else:
-                print("No inlier points found for the query coordinate:", query_coord)
-
-    return tubular_tree_locations
 
 
 if __name__ == '__main__':
@@ -441,7 +268,7 @@ if __name__ == '__main__':
 
     chm = gaussian_chm(chm_or, 2)
 
-    tree_indices = detect_trees(chm, tree_detection_threshold, filter_sizer)
+    tree_indices = detect_trees_in_max(chm, tree_detection_threshold, filter_sizer)
 
     print("Found", len(tree_indices[0]), "tree locations in first Step.")
 
@@ -467,3 +294,6 @@ if __name__ == '__main__':
 
     # print the number of trees detected and the number of trees that are tubular
     print("Number of trees detected:", len(detection[0]))
+
+    # GET ACCURACY
+

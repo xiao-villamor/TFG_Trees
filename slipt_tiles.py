@@ -2,7 +2,7 @@
 import laspy
 import pylas
 import numpy as np
-
+import lazrs
 
 
 def split_cloud_into_squares(cloud_points, num_tiles):
@@ -45,7 +45,7 @@ def split_cloud_into_squares(cloud_points, num_tiles):
 
     # Save each part as a separate LAS file
     for i, part in enumerate(split_tiles):
-        outfile = f"D:\TFG\Data\\tiles\luxemburgo\\new\part_{i + 1}.las"
+        outfile = f"D:\Data\Datatest\Data 2\LIDAR2019_NdP_81500_82500_EPSG2169\\LIDAR2019_NdP_81500_82500_EPSG2169_hag_last_return_part_{i + 1}.las"
 
         # Extract coordinates from each part
         x = part[:, 0]
@@ -66,11 +66,11 @@ def split_cloud_into_squares(cloud_points, num_tiles):
 
 
 if __name__ == '__main__':
-    file_path = r"D:\TFG\Data\tiles\luxemburgo\new\no_ground_hag.las"
+    file_path = r"D:\Data\Datatest\Data 2\LIDAR2019_NdP_81500_82500_EPSG2169_hag_last_return.las"
     las_file = pylas.read(file_path)
     las_file = pylas.convert(las_file)
 
     # get points
     points = np.column_stack([las_file.x, las_file.y, las_file.z])
 
-    split_cloud_into_squares(points, 12)
+    split_cloud_into_squares(points, 370)
