@@ -7,7 +7,7 @@ Este capítulo se dedicará a explicar el algoritmo planteado para la detección
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=8.5cm]{imaxes/Diagrama_alg.png}
+\includegraphics[height=8.5cm]{imaxes/flujoalgo.png}
 \caption{Diagrama de Flujo del Algoritmo}
 \label{fig:diagFlujoAlgoritmo}
 \end{figure}
@@ -16,8 +16,8 @@ Este capítulo se dedicará a explicar el algoritmo planteado para la detección
 \subsection{Obtención de las Alturas Normalizadas}
 \label{chap:normalAlgo}
 
-La obtención de las alturas normalizadas, también conocidas como alturas sobre el suelo (HAG), es un paso esencial para la detección y análisis de objetos elevados, como árboles, en nubes de puntos. Las alturas normalizadas eliminan la elevación del terreno y se centran en la altura relativa de los objetos con respecto a la superficie del suelo.
-Esto nos ayuda a reducir errores provocados por los diferentes desniveles del terreno y nos ayuda a la comparación de los resultados entre diferentes regiones ya que nos concentramos únicamente en la verticalidad de los puntos que conforman los arboles.
+La obtención de las alturas normalizadas, también conocidas como alturas sobre el suelo (HAG), es un paso esencial para la detección y análisis de objetos elevados como árboles en nubes de puntos. Las alturas normalizadas eliminan la elevación del terreno y se centran en la altura relativa de los objetos con respecto a la superficie del suelo.
+Esto nos ayuda a reducir errores provocados por los diferentes desniveles del terreno y nos ayuda a la comparación de los resultados entre diferentes regiones ya que nos concentramos únicamente en la verticalidad de los puntos que conforman los árboles.
 
 \begin{figure}[h]
   \begin{subfigure}{0.5\textwidth}
@@ -38,11 +38,11 @@ Esto nos ayuda a reducir errores provocados por los diferentes desniveles del te
 \subsection{Obtención del Last Return}
 \label{chap:LastAlgo}
 
-Esta parte es fundamental en este algoritmo. El uso del último retorno en la detección de árboles mejora la visualización y la caracterización del tronco, debido a que este retorno sufre menos interferencia de la vegetación y ruido. Al alcanzar la cima del árbol, proporciona una visión directa del tronco sin obstrucciones de las hojas y ramas superiores. Esto permite una identificación más precisa de la altura, forma y detalles del tronco, siendo esencial en aplicaciones como análisis de vegetación y modelado del entorno.
+Esta parte es fundamental en este algoritmo. El uso del último retorno en la detección de árboles mejora la visualización y la caracterización del tronco, debido a que este retorno sufre menos interferencia de la vegetación y ruido. Al alcanzar la cima del árbol, proporciona una visión directa del tronco sin obstrucciones de las hojas y ramas superiores. Esto permite una identificación más precisa de la altura, forma y detalles del tronco, siendo esencial en aplicaciones como análisis de árboles.
 
 \subsection{Eliminación del suelo}
 \label{chap:groundAlgo}
-En esta primera fase, el objetivo es eliminar los puntos que corresponden al suelo, ya que no son necesarios para la detección y su inclusión solo requeriría un mayor consumo de recursos. Para este paso, se utilizó el algoritmo basado en simulación de ropa de Zhang, el cual está disponible en PDAL.
+En esta fase, el objetivo es eliminar los puntos que corresponden al suelo, ya que no son necesarios para la detección y su inclusión solo requeriría un mayor consumo de recursos. Para este paso, se utilizó el algoritmo basado en simulación de ropa de Zhang, el cual está disponible en PDAL \cite{rs8060501}.
 
 El método CSF crea una malla virtual que abarca toda la nube de puntos y luego ajusta dicha malla a los puntos de la nube. A cada punto se le estima la altura de la malla mediante la interpolación de los puntos dentro de cada triángulo. Luego, se identifican los puntos que constituyen ruido al comparar la altitud de los puntos de la nube con la altitud estimada en la malla.
 
@@ -77,16 +77,16 @@ Luego, se construye un árbol KD (KD-tree) a partir del modelo de nube de puntos
 
 Después de tener la cuadrícula y el árbol KD, se procede a realizar una consulta a los vecinos más cercanos para cada punto de la cuadrícula. Esto implica encontrar el punto más cercano en el modelo de nube de puntos para cada punto de la cuadrícula.
 
-Una vez obtenidos los vecinos más cercanos, se recupera la altura del dosel correspondiente a cada punto de la cuadrícula en relación con el suelo. Esto se logra obteniendo las alturas asociadas a los puntos encontrados en la consulta previa.
+Una vez obtenidos los vecinos más cercanos, se recupera la altura del dosel correspondiente a cada punto en relación con el suelo. Esto se logra obteniendo las alturas asociadas a los puntos encontrados en la consulta previa.
 
 Finalmente, los valores de altura del dosel se organizan en un mapa de alturas, donde cada punto de la cuadrícula tiene asignada una altura del dosel correspondiente. Este mapa se usará en la próxima etapa para obtener los puntos donde potencialmente se encuentra un árbol.
 
-Se podría pensar que una forma más rápida de obtener este mapa de alturas sería coger simplemente la altura de cada punto en la nube de puntos, pero el problema de esto es que las nubes son irregulares y existen partes donde hay más densidad de puntos que en otras, donde los puntos muestreados tendrán una distribución no uniforme. Con el fin de tener una representación fiel y precisa, optamos por usar un \textit{KD-tree} y sacrificar un poco de rendimiento.
+Se podría pensar que una forma más rápida de obtener este mapa de alturas sería coger simplemente la altura de cada punto en la nube, pero el problema de esto es que las nubes son irregulares y existen partes donde hay más densidad de puntos que en otras, donde los puntos muestreados tendrán una distribución no uniforme. Con el fin de tener una representación fiel y precisa, optamos por usar un \textit{KD-tree} y sacrificar un poco de rendimiento.
 
 En el ejemplo \ref{fig:chmexample} podemos ver cómo a partir de una nube de puntos, obtenemos su mapa de alturas.
 
 \vspace{0.2cm}
-\begin{lstlisting}[language=Python, caption={Código para obtener el mapa de alturas del dorsel }]
+\begin{lstlisting}[language=Python, caption={Código para obtener el mapa de alturas del dosel}]
 def compute_canopy_height_model(point_cloud_height_model, resolution):
     min_coords_height_model = np.min(point_cloud_height_model, axis=0)
     max_coords_height_model = np.max(point_cloud_height_model, axis=0)
@@ -109,12 +109,11 @@ def compute_canopy_height_model(point_cloud_height_model, resolution):
 
 \subsection{Detección usando Máximos}
 
-Haciendo uso del mapa de alturas obtenido antes, aplicando un umbral y un tamaño de filtro específico, se pueden identificar los puntos que tienen potencial de ser árboles.
+Haciendo uso del mapa de alturas obtenido antes, aplicando un umbral y un tamaño de filtro específico se pueden identificar los puntos que tienen potencial de ser árboles.
 
-En primer lugar, se realiza un filtrado de máximo local en el mapa de alturas. Este proceso consiste en examinar cada punto y determinar si es el valor máximo dentro de un vecindario definido por el tamaño de filtro establecido. La distancia de búsqueda del máximo local está determinada por el tamaño del vecindario. Esto lo podemos ver como la variable \textit{filter\_size} en la implementación \ref{lst:detectT} y con \textit{threshold}, ambos valores son definidos previamente como constantes.
+En primer lugar se realiza un filtrado de máximo local en el mapa de alturas. Este proceso consiste en examinar cada punto y determinar si es el valor máximo dentro de un vecindario definido por el tamaño de filtro establecido. La distancia de búsqueda del máximo local está determinada por el tamaño del vecindario. Esto lo podemos ver como la variable \textit{filter\_size} en la implementación \ref{lst:detectT} y con \textit{threshold}, ambos valores son definidos previamente como constantes.
 
-A continuación, se crea una máscara que identifica los puntos en el mapa de alturas que cumplen dos condiciones: deben ser iguales a los máximos locales encontrados y deben ser mayores que el umbral establecido. Esto se logra mediante una comparación elemento a elemento entre el mapa de alturas y la imagen resultante del filtrado de máximo local.
-
+A continuación, se crea una máscara que identifica los puntos en el mapa de alturas que cumplen dos condiciones: deben ser iguales a los máximos locales encontrados y deben ser mayores que el umbral establecido. 
 Por último, se obtienen los índices correspondientes a los puntos que cumplen las condiciones establecidas en la máscara. Estos índices representan las ubicaciones de los árboles detectados en el mapa de alturas.
 
 \vspace{0.2cm}
@@ -129,7 +128,7 @@ def detect_trees_in_max(canopy_height_model, threshold, filter_size):
     return tree_indexes
 \end{lstlisting}
 
-La figura \ref{fig:chm_max} muestra los puntos máximos dentro del mapa de alturas obtenido previamente
+La figura \ref{fig:chm_max} muestra los puntos máximos dentro del mapa de alturas obtenido previamente.
 
 \begin{figure}[h]
 \centering
@@ -142,7 +141,7 @@ La figura \ref{fig:chm_max} muestra los puntos máximos dentro del mapa de altur
 \begin{subfigure}[t]{.4\textwidth}
   \centering
   \includegraphics[height=6cm]{imaxes/slice_lat.png}
-  \caption{Nube de puntos Original vista lateral}
+  \caption{Nube de puntos original vista lateral}
   \label{fig:slice_lat}
 \end{subfigure}
 \begin{subfigure}[t]{.4\textwidth}
@@ -154,33 +153,31 @@ La figura \ref{fig:chm_max} muestra los puntos máximos dentro del mapa de altur
 \begin{subfigure}[t]{.4\textwidth}
   \centering
   \includegraphics[height=6cm]{imaxes/chm_with_trees.png}
-  \caption{Mapa de alturas con los Maximos}
+  \caption{Mapa de alturas con los máximos}
   \label{fig:chm_max}
 \end{subfigure}
 
-\caption{Ejemplo de Obtencion de arboles mediante maximos}
+\caption{Ejemplo de obtención de árboles mediante máximos}
 \label{fig:chmexample}
 \end{figure}
 
-\subsection{Detección de árboles mediante árboles}
+\subsection{Detección de árboles mediante árboles de búsqueda}
 
 Una vez obtenidos los puntos con potencial de ser árboles, obtendremos una sección cilíndrica de puntos con centro en ese punto. Esta sección tiene un radio que determinaremos, y dentro de ella se tienen que encontrar los puntos que conforman ese \textit{árbol}.
 
-Los troncos de los árboles tienden a tener una estructura que forma una línea, aunque en ciertas especies, llegada cierta altura, comienza a tener muchas ramificaciones; hasta ese punto forma una línea.
+Los troncos de los árboles tienden a tener una estructura que forma una línea, aunque en ciertas especies, llegada cierta altura, comienza a tener muchas ramificaciones.
 
-Lo que buscamos es ser capaces de encontrar esa linealidad en esa sección. Para eso, la partiremos en \textit{slices} de la misma altura y obtendremos el centroide. Las slices tendrán un tamaño fijo que definimos previamente. Un centroide representa el centro geométrico de los puntos de esa rodaja. Con una lista de estos, obtendremos un score en función de que también se ajuste a una línea, y en función de si es mayor a un umbral o no, se determinará si es realmente un árbol.
-
+Lo que buscamos es ser capaces de encontrar esa linealidad en esa sección. Para eso, la partiremos en \textit{slices} de la misma altura y obtendremos el centroide. Las slices tendrán un tamaño fijo que definimos previamente. Un centroide representa el centro geométrico de los puntos de esa rodaja. Con una lista de estos, obtendremos una calificación en función de que también se ajuste a una línea, y en función de si es mayor a un umbral o no, se determinará si es realmente un árbol.
 
 Para obtener este valor de que tan bien se ajustan a una linea usaremos el método de los mínimos cuadrados. Este método busca minimizar la suma de los cuadrados de las diferentes ordenadas. La ecuación de una línea en 3D se representa como $z = ax + by + c$, donde $z$ es la coordenada vertical y $x$ e $y$ son las coordenadas horizontales. Los coeficientes $a$, $b$, y $c$ se determinan para minimizar la función de error:
 
 \[
 E(a, b, c) = \sum_{i=1}^{n} (z_i - (ax_i + by_i + c))^2
 \]
-
 donde $n$ es el número de puntos y $(x_i, y_i, z_i)$ son las coordenadas de cada punto. La optimización se realiza para encontrar los valores de $a$, $b$, y $c$ que minimizan esta función, lo que permite construir la ecuación de la línea que mejor se ajusta a los datos.
 
 Si nuestro algoritmo solo tuviera en cuenta eso podrían surgir problemas al encontrarse con ramificaciones o con puntos que aun que estén dentro del cilindro pueden ser de otro árbol o ruido. 
-Con el fin de hacer el algoritmo más robusto, antes de calcular el centroide de cada slice, se aplica un algoritmo al conjunto de puntos que la conforman y se aplica un algoritmo de \textit{clustering}, en nuestro caso usamos DBSCAN, que se basa en la agrupación en la densidad de puntos en una zona. En una primera implementación, en el caso de tener más de un centroide en una slice podríamos seleccionar solo el que se ajuste mejor a una recta con los centroides previos, pero con esta decisión estaríamos descartando centroides que aunque en el contexto de esa sección se ajustan peor, en el contexto de todo el árbol pueden tener un mejor ajuste.
+Con el fin de hacer el algoritmo más robusto, antes de calcular el centroide de cada slice, se aplica un algoritmo al conjunto de puntos que la conforman, en concreto uno de \textit{clustering}, en nuestro caso usamos DBSCAN, que se basa en la agrupación en la densidad de puntos en una zona. En una primera implementación, en el caso de tener más de un centroide en una slice podríamos seleccionar solo el que se ajuste mejor a una recta con los centroides previos, pero con esta decisión estaríamos descartando centroides que aunque en el contexto de esa sección se ajustan peor, en el contexto de todo el árbol pueden tener un mejor ajuste.
 
 \begin{figure}[h]
 \centering
@@ -188,7 +185,6 @@ Con el fin de hacer el algoritmo más robusto, antes de calcular el centroide de
     \caption{Ejemplo de un árbol de centroides}
     \label{fig:diagFlujoarb}
 \end{figure}
-
 
 Por lo que para evitar esto se guardan todos en una estructura de árbol que contiene las coordenadas del centroide y el ajuste a una linea con el resto de centroides, a cada nodo se le añaden los slices del siguiente slice. 
 En la figura \ref{fig:diagFlujoarb} vemos como sería uno de estos árboles. Al tener el árbol lo que haremos será mirar los nodos hoja y mirar cuál es el que tiene mayor score, es decir, que mejor se ajuste a una línea y a partir de ese nodo iremos recorriendo la estructura de datos asta la raíz para obtener todos los centroides por los que pasa.
@@ -240,16 +236,16 @@ def detect_trees(point_cloud, query_coords, radius_threshold):
   \begin{subfigure}{0.5\textwidth}
     \centering
     \includegraphics[width=0.8\linewidth]{imaxes/detecsup.png}
-    \caption{Puntos detectamos arboles vista superior}
+    \caption{Puntos detectamos árboles vista superior}
     \label{fig:last1}
   \end{subfigure}%
   \begin{subfigure}{0.5\textwidth}
     \centering
     \includegraphics[width=0.8\linewidth]{imaxes/deteclat.png}
-    \caption{Puntos detectamos arboles vista lateral}
+    \caption{Puntos detectamos árboles vista lateral}
     \label{fig:last}
   \end{subfigure}
-  \caption{Ejemplo de puntos detectados como arboles, puntos negros son un árbol}
+  \caption{Ejemplo de puntos detectados como árboles, puntos negros son un árbol}
   \label{fig:algo2}
 \end{figure}
 

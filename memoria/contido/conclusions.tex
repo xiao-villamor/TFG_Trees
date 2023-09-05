@@ -1,9 +1,15 @@
-\chapter{Conclusións}
+\chapter{Conclusiones y Futuras Lineas de Trabajo}
 \label{chap:conclusions}
 
 \lettrine{E}{n} este ultimo capitulo se expondrán las conclusiones obtenidas tras realizar este proyecto y los aprendizajes realizados. También Comentaremos que posibles lineas de futuro se podrían seguir para mejorar el trabajo realizado hasta ahora.
 
 \section{Conclusiones}
+Como pudimos ver el procesado de nubes de puntos tiene un gran potencial, en nuestro caso con un sistema basado simplemente en características geométricas como la linealidad del tronco, conseguimos una precisión del 68 \% lo que no es un mal valor viendo lo compleja que es la estructura de un árbol y la gran variedad de ellos que existen. En un test con múltiples especies vemos como falsos negativos son abundantes, pero donde realmente vemos su robustez es en los entornos donde la densidad de puntos es buena y hay arboles caducifolios, en estos entornos el algoritmo demuestra ser eficaz y consistente. 
+
+Esta fue solo una de las posibilidades que se barajaron, la otra principal aproximación que se pensó fue el uso de redes neuronales, pero el tiempo y la falta de recursos para entrenarla nos hizo descartarla para este proyecto. Esta opción es la que esta dando mejores resultados como podemos ver en el paper \cite{LIU2021109301} donde en entornos con altas densidades y usando la red PointNet consigue detectar abedules con un 90\% de precisión.
+
+También podemos ver después de analizar los resultados lo lento que es este sistema, si quisiéramos procesar grandes superficies nos consumiría mucho tiempo. La principal causa de esto es el uso de Python que en términos de rendimiento no es el mejor lenguaje, pero si hablamos de librerías y utilidades para usar nubes de puntos posiblemente sea donde tengamos mayor variedad que nos agilicen el desarrollo de un primer sistema. Como ya comentamos en la sección \ref{chap:planification} se propuso usar \textit{Rust} pero en este las librerías son mas escasas y por lo tanto necesitaríamos desarrollarlas nosotros, y si quisiéramos usar redes neuronales ya seria mas complicado por que la mayoría están pensadas para usar con \textit{Python}. Si solo quisiéramos implementar lo que tenemos hasta ahora y tuviéramos mas tiempo la opción lógica seria ir por  \textit{Rust}
+
 
 
 \section{Trabajo Futuro}

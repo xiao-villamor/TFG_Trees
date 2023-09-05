@@ -1,10 +1,10 @@
 \chapter{Resultados Experimentales}
 \label{chap:Resultados}
-\lettrine{E}{n} este capitulo expondremos los resultados obtenidos al ejectutar nuesto algoritmo en un entorno de pruebas. Tambien explicaremos este entorno y como se obtuvieron los datasets utilizados para la obtención de las métricas.
+\lettrine{E}{n} este capitulo expondremos los resultados obtenidos al ejecutar nuestro algoritmo en un entorno de pruebas. También explicaremos el entorno donde se desarrollaron y como se obtuvieron los datasets utilizados.
 
 \section{Entorno de pruebas}
-A continuación explicaremos como se obtuvieron los datasets para realizar donde se realizaron estas pruebas. 
-Para la obtencion del dataset se siguio un procedimiento que podemos ver en la figura \ref{fig:flugdataset} ahora explicaremos cada paso
+A continuación explicaremos como se obtuvieron los datasets donde se realizaron estas pruebas. 
+Para la obtención del dataset se siguió un procedimiento que podemos ver en la figura \ref{fig:flugdataset} y que ahora explicaremos paso a paso.
 
 \begin{figure}[h]
 \centering
@@ -13,9 +13,9 @@ Para la obtencion del dataset se siguio un procedimiento que podemos ver en la f
     \label{fig:flugdataset}
 \end{figure}
 
-\subsection{Obtencion del tile de un repositorio}
-Primero tenemos que buscar un repositorio de datos LiDAR y seleccionar los tiles que usaremos. En nuestro caso obtamos por usar el repositorio de Luxemburgo \cite{luxdata} como ya se comento en el sección \ref{chap:investigPlan}.Se escogió este principalmente por su densidad de puntos que cumple con lo requerido y por ser libre para que cualquiera pueda usarlo.
-Para nuestro dataset escogimos los tiles con identificador \textit{57000\_105000} y \textit{81500\_82500}.
+\subsection{Obtención del tile de un repositorio}
+Primero tenemos que buscar un repositorio de datos LiDAR y seleccionar los tiles que usaremos. En nuestro caso optamos por usar el repositorio de Luxemburgo \cite{luxdata} como ya se comentó en la sección \ref{chap:investigPlan}.Se escogió este principalmente por su densidad de puntos que cumple con lo requerido y por ser libre para que cualquiera pueda usarlo.
+Para nuestro entorno de prueba escogimos los tiles con identificador \textit{57000\_105000} y \textit{81500\_82500}.
 
 \begin{figure}[h]
   \begin{subfigure}{0.5\textwidth}
@@ -37,7 +37,7 @@ Para nuestro dataset escogimos los tiles con identificador \textit{57000\_105000
 Como ya comentamos en el capitulo \ref{chap:Deteccion} necesitamos obtener un tile con las alturas normalizadas y con el ultimo retorno.A partir de eso necesitamos la versión con suelo para el mapa de alturas y otro sin el suelo para la detección. La explicación de como obtenerlos la encontramos en el capitulo \ref{chap:normalAlgo} , \ref{chap:LastAlgo} y \ref{chap:groundAlgo}.
 
 \subsection{Recortar Tile en Tiles mas pequeños}
-Para el entorno de prueba se decidió optar por recortar los tiles en trozos mas pequeños.Esto se decidió por que el ground truth se hace manera manual y por lo tanto generarlo para un tile tan grande seria prácticamente imposible y se cometerían muchos errores. Además también eliminas puntos que no son de interés como campos de cultivos o casas que lo único que hacen es ralentizar el proceso de prueba.
+Para las prueba se decidió optar por recortar los tiles en trozos mas pequeños.Esto se hizo así por que el ground truth se hace de manera manual y por lo tanto generarlo para un tile tan grande sería prácticamente imposible y se cometerían muchos errores. Además también eliminas puntos que no son de interés como campos de cultivos o casas que lo único que hacen es ralentizar el proceso de prueba.
 
 Para esta tarea se realizó un pequeño programa para recortar un tile grande en tiles mas pequeños cuadrados y todos del mismo tamaño. Después de esto escogeremos manualmente varios donde veamos que haya arboles y con diferentes tipos. En nuestro caso el dataset esta formado por 70 de estos tiles y con un total de 547 arboles de diferentes especies para que las métricas obtenidas sean reales.
 
@@ -65,11 +65,11 @@ Para esta tarea se realizó un pequeño programa para recortar un tile grande en
 \label{fig:ejemplotree}
 \end{figure}
 
-\subsection{Obtencion del Ground Truth}
-Una vez con los tiles preparados necesitamos un ground truth con la ubicación de los arboles.Para esta tarea tambien se desarrollo un pequeño programa para marcar estos mediante una interfaz gráfica como vemos en la figura \ref{fig:labelTile}.
+\subsection{Obtención del Ground Truth}
+Una vez con los tiles preparados necesitamos un ground truth con la ubicación de los arboles.Para esta tarea también se desarrollo un pequeño programa para marcar estos mediante una interfaz gráfica como vemos en la figura \ref{fig:labelTile}.
 En esta interfaz se nos muestra la nube de puntos y al hacer \textit{Shit} + \textit{Click Izquierdo} marcamos el punto donde esta el árbol, idealmente marcaremos donde se encuentre el tronco, en los casos donde no se pueda saber bien si es el tronco marcaremos la copa del árbol.
 
-Una vez los seleccionemos todos al cerrar la interfaz se nos generara un archivo \textit{csv} con las coordenadas de los puntos. Este archivo es el que usaremos en un futuro para comprobar la precisión de la detección.
+Una vez los seleccionemos todos al cerrar la interfaz se nos generará un archivo \textit{csv} con las coordenadas de los puntos. Este archivo es el que usaremos en un futuro para comprobar la precisión de la detección.
 
 \section{Equipo de Pruebas}
 Una vez con el dataset obtenido, comentaremos el equipo donde se realizaron estas pruebas. Para los test usamos una PC de sobremesa con las especificaciones que podemos ver en esta tabla 
@@ -88,7 +88,7 @@ OS & Windows 10 Home 22H2 \\
 
 
 \end{tabular}
-\caption{Tabla con el desglose de los costes humanos}
+\caption{Tabla con las especificaciones del equipo usado}
 \label{tabcospes}
 \end{table}
 
@@ -104,7 +104,7 @@ OS & Windows 10 Home 22H2 \\
 
 Antes de revisar los resultados de las pruebas, es esencial definir los parámetros utilizados en su realización. En primer lugar, estableceremos la resolución del mapa de alturas, que influye en la calidad y la resolución del mapa. Esta variable se establecerá en \textit{\textbf{0.005}}. A continuación, determinaremos el tamaño de la vecindad, en este caso, \textit{\textbf{80}}, y el umbral necesario para determinar si un valor es un máximo, que se fijará en \textit{\textbf{0.3}}.
 
-En lo que respecta a la detección por estratos, estableceremos el número mínimo de puntos requeridos para considerar que un objeto es un árbol, que será \textit{\textbf{40}}. Además, definiremos el tamaño de los "slices" como \textit{\textbf{1}}, y el umbral necesario para determinar si el ajuste de la línea es suficientemente bueno, que será \textit{\textbf{0.1}}.
+En lo que respecta a la detección por estratos, estableceremos el número mínimo de puntos requeridos para considerar que un objeto es un árbol, que será \textit{\textbf{40}}. Además, definiremos el tamaño de los slices como \textit{\textbf{1}}, y el umbral necesario para determinar si el ajuste de la línea es suficientemente bueno, que será \textit{\textbf{0.1}}.
 
 A continuación, presentaremos estos valores en una tabla \ref{tablavar} para una visualización más rápida.
 \begin{table}[h]
@@ -136,9 +136,9 @@ La obtención se explica en la imagen \ref{fig:confmatrix}, donde a la derecha v
 
 \begin{itemize}
     \item \textbf{Verdaderos Positivos (True Positives, TP)} : Representa los casos en los que el modelo predice correctamente a que clase pertenece. En nuestro caso seria cuando detecta un árbol correctamente.
-    \item \textbf{Verdaderos Negativos (True Negatives, TN)} :  Representa los casos en los que el modelo predice que no pertenece a una clase determinada y realmente ese objeto no pertenece a esa clase. Seria por ejemplo cuando detecta que un punto no es un árbol, en nuestro caso este valor no lo podemos obtener.
-    \item \textbf{Falsos Postivos (False Positives, FP)} : Representa los casos en los que el modelo predijo incorrectamente a que pertenece a una clase determinada. En nuestro dominio seria cuando detecta que hay un árbol cuando realmente no lo hay.
-    \item \textbf{Falsos Negativos (False Negatives, FN)} : Representa cuando el modelo predice que no pertenece a una clase cuando realmente si lo hace. Un ejemplo seria cuando el sistema detecta que no hay un árbol pero realmente si lo hay.
+    \item \textbf{Verdaderos Negativos (True Negatives, TN)} :  Representa los casos en los que el modelo predice que no pertenece a una clase determinada y realmente ese objeto no pertenece a esa clase. Sería por ejemplo cuando detecta que un punto no es un árbol, en nuestro caso este valor no lo podemos obtener.
+    \item \textbf{Falsos Postivos (False Positives, FP)} : Representa los casos en los que el modelo predijo incorrectamente a que pertenece a una clase determinada. En nuestro dominio sería cuando detecta que hay un árbol cuando realmente no lo hay.
+    \item \textbf{Falsos Negativos (False Negatives, FN)} : Representa cuando el modelo predice que no pertenece a una clase cuando realmente si lo hace. Un ejemplo sería cuando el sistema detecta que no hay un árbol pero realmente si lo hay.
 \end{itemize}
 
 Una vez explicada la matriz de confusión explicaremos el significado de las métricas que hay en esta, usaremos todas menos la especialidad ya que no consideramos el caso no existir arboles.
@@ -146,9 +146,9 @@ Una vez explicada la matriz de confusión explicaremos el significado de las mé
 \begin{itemize}
     \item \textbf{Precisión} : La precisión representa la proporción de perdiciones positivas correctas (TP) en relación a todas las predicciones positivas (TP + TF). Esta métrica es útil para identificar que la detección de los arboles sea precisa y confiable.
 
-    \item \textbf{Exactitud} : La exactitud representa la proporción de perdiciones correctas (TP + TN) en relación al total de perdiciones  (TP + TN + FP + FN). Esta metrica nos indica que ta bien esta clasificando los arboles que realmente son arboles y los que no son realmente arboles. En casos donde el dataset no este balanceado, por ejemplo donde haya mas especies que puedan favorecer al algoritmo esta metrica no es suficiente. 
+    \item \textbf{Exactitud} : La exactitud representa la proporción de perdiciones correctas (TP + TN) en relación al total de perdiciones  (TP + TN + FP + FN). Esta métrica nos indica que ta bien esta clasificando los árboles que realmente son árboles y los que no son realmente árboles. En casos donde el dataset no este balanceado, por ejemplo donde haya mas especies que puedan favorecer al algoritmo esta métrica no es suficiente. 
 
-    \item \textbf{Exhaustividad} : La sensibilidad representa la proporción de predicciones correctas (TP) en relación a todos las perdiciones verdaderas reales (TP + FN). Esta métrica nos permite ver si nuestro sistema es capaz de detectar las mayoría de los arboles evitando los falsos negativos.
+    \item \textbf{Exhaustividad} : La sensibilidad representa la proporción de predicciones correctas (TP) en relación a todos las perdiciones verdaderas reales (TP + FN). Esta métrica nos permite ver si nuestro sistema es capaz de detectar las mayoría de los árboles evitando los falsos negativos.
 
     \item \textbf{Especialidad} : La especificidad representa la proporción de predicciones correctas (TP) en relación a todos los casos verdaderamente negativos (TN + FP). Esta métrica nos permite evaluar la capacidad de evitar detecciones erróneas en nuestro sistema, como por ejemplo en el caso de detectar un arbusto como árbol.
 
@@ -166,7 +166,7 @@ Una vez explicada la matriz de confusión explicaremos el significado de las mé
 \end{figure}
 
 
-Una vez con esto cabe remarcar que este sistema solo detecta si hay arboles, no detecta que no hay, por lo que las métricas como la Especialidad o Exactitud están acotadas para el caso exclusivo de existir arboles y no consideran el caso de no existir arboles.
+Una vez con esto cabe remarcar que este sistema solo detecta si hay árboles, no detecta que no hay, por lo que las métricas como la Especialidad o Exactitud están acotadas para el caso exclusivo de existir arboles y no consideran el caso de no existir arboles.
 Para comprobar si un árbol esta bien clasificado usamos las coordenadas del ground truth y comparamos si el punto que detectado esta cerca de un punto que es detectado como árbol, para esto definimos una distancia de margen de error.
 
 Con esto aclarado procedemos a mostrar los resultados obtenidos en la tabla \ref{tablaconf} que contiene los valores de la matriz de confusión y en la tabla \ref{tablaMetr} que contiene las métricas.
@@ -281,7 +281,7 @@ Resolución del mapa de altura & 0.005 \\
 Tamaño de vecindad & 140 \\
 Umbral detección en máximos & 0.3 \\
 Mínimo de puntos por estrato & 40 \\
-Tamaño de "Slice" & 1 \\
+Tamaño de slice & 1 \\
 Umbral Linealidad & 0.1 \\
 
 \end{tabular}
@@ -289,7 +289,7 @@ Umbral Linealidad & 0.1 \\
 \label{tablavar2}
 \end{table}
 
-Tras ejecutar el mismo algoritmo en este dataset obtenemos los resultados que podemos ver en la tabla \ref{tablaconf2} y \ref{tablaMetr2} que podemos ver que son totalmente diferentes.
+Tras ejecutar el mismo algoritmo en este dataset obtenemos los resultados que podemos ver en la tabla \ref{tablaconf2} y \ref{tablaMetr2} que son totalmente diferentes a los vistos previamente.
 
 \begin{table}[!h]
 \centering

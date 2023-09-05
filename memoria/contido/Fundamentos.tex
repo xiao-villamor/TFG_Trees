@@ -1,11 +1,11 @@
 \chapter{Fundamentos Teóricos y Tecnológicos}
 \label{chap:fundamentos}
 
-\lettrine{E}{n} este capítulo, se expondrán los fundamentos teóricos y tecnológicos necesarios para comprender este trabajo. Además se comentarán las herramientas en las que nos apoyamos para llevar a cabo esta tarea.
+\lettrine{E}{n} este capítulo se expondrán los fundamentos teóricos y tecnológicos necesarios para comprender este trabajo. Además se comentarán las herramientas en las que nos apoyamos para realizarlo.
 
 \section{LiDAR}
 
-El término LiDAR se proviene de “Light Detection and Ranging” en inglés. Esta tecnología utiliza un pulsoláser para medir con precisión las distancias y crear una representación tridimensionales de un entorno u objeto.
+El término LiDAR se proviene de “Light Detection and Ranging” en inglés. Esta tecnología utiliza un pulso láser para medir con precisión las distancias y crear una representación tridimensionales de un entorno u objeto.
 
 Su funcionamiento es el siguiente, en un emisor emite un pulso láser hacia una superficie u objeto, mientras que un receptor registra el tiempo que tarda en recibir los rebotes de ese pulso. Esto nos permite obtener con precisión la distancia entre el sensor y el objeto. En nuestro caso al trabajar con datos geoespaciales también es necesario que el sistema esté equipado con un GPS para obtener la ubicación geográfica del sensor.
 
@@ -18,7 +18,7 @@ Su funcionamiento es el siguiente, en un emisor emite un pulso láser hacia una 
 \end{figure}
 
 
-En los últimos años esta tecnología ha experimentado un gran crecimiento debido a su versatilidad y capacidad para ser usado en multitud de escenarios. Entre estos estan el uso en vehículos de conducción autónoma \cite{articleauto}, gestión forestal, como este trabajo, \cite{rs14010170}, para arqueología \cite{lidararque}, agricultura de precision \cite{RIVERA2023107737} o para obtener modelos 3d de ciudades \cite{lidarcity}.
+En los últimos años esta tecnología ha experimentado un gran crecimiento debido a su versatilidad y capacidad para ser usada en multitud de escenarios. Entre estos están el uso en vehículos de conducción autónoma \cite{articleauto}, gestión forestal, como este trabajo, \cite{rs14010170}, para arqueología \cite{lidararque}, agricultura de precisión \cite{RIVERA2023107737} o para obtener modelos 3d de ciudades \cite{lidarcity}.
 
 \subsection{Nubes de Puntos}
 Las nubes de puntos son el resultado del escaneo de una superficie u objeto, esta nube de puntos no es mas que un conjunto de puntos tridimensionales. Cada uno de estos puntos guarda su coordenada (x, y, z).El par de coordenadas (x, y) representan la ubicación en el plano, y la coordenada (z) la altura de ese punto. Junto con esto también se guardan atributos adicionales para tener mas información de los objetos y superficies. A continuación, explicaremos los más importantes para nuestro trabajo.
@@ -32,7 +32,7 @@ Un símil que puede ayudarnos a comprender mejor esto sería pensar en cuando la
 En nuestra nube de puntos, registramos cada uno de estos "rebotes" como puntos individuales. Esta información resulta útil para comprender objetos con múltiples capas, como los árboles, que son el objeto de estudio en este trabajo. Específicamente, como veremos más adelante, utilizaremos el primer retorno, ya que en la mayoría de los casos representa la parte superior del árbol, conocida como "corona arbórea".
 
 \subsubsection{Clasificación del objeto}
-Cada punto en la nube de puntos puede ser clasificado según su origen. Por ejemplo, si los puntos pertenecen al suelo, edificios o vegetación. Para que esta clasificación sea consistente y homogénea entre todas las nubes de puntos la Sociedad Americana de Fotogrametría y Sensores Remotos (ASPRS) \cite{ASPRS-LAS} propone los siguiente códigos a la hora de clasificar los puntos \ref{tabclas}.
+Cada punto en la nube puede ser clasificado según su origen. Por ejemplo, si los puntos pertenecen al suelo, edificios o vegetación. Para que esta clasificación sea consistente y homogénea entre todas las nubes de puntos la Sociedad Americana de Fotogrametría y Sensores Remotos (ASPRS) \cite{ASPRS-LAS} propone los siguiente códigos a la hora de clasificar los puntos \ref{tabclas}.
 
 \begin{table}[hp!]
    \centering
@@ -86,7 +86,7 @@ La detección de objetos en nubes de puntos es una tarea crucial en diversas apl
 
 \subsection{Segmentación basada en Clústeres}
 
-La segmentación basada en clústeres agrupa puntos que están cerca unos de otros en clústeres, lo que permite identificar regiones que probablemente representen objetos o partes del entorno. Métodos como el crecimiento de regiones, K-means, Mean Shift y DBSCAN son ampliamente utilizados para esta técnica. La segmentación basada en clústeres es efectiva para detectar objetos con formas y tamaños variados.
+La segmentación basada en clústeres agrupa puntos que están cerca unos de otros en clústeres, lo que permite identificar regiones que probablemente representen objetos o partes del entorno. Métodos, K-means, Mean Shift y DBSCAN son ampliamente utilizados para esta técnica. La segmentación basada en clústeres es efectiva para detectar objetos con formas y tamaños variados.
 
 \begin{figure}[h]
 \centering
