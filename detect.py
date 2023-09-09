@@ -19,8 +19,8 @@ from visualization_utils import display_original_cloud_with_centroids, plot_tree
     display_cloud, display_slice_with_centroids
 
 min_tree_samples = 40
-tree_detection_threshold = 0.1
-filter_sizer = 120  # Adjust this value to control tree detection sensitivity
+tree_detection_threshold = 3
+filter_sizer = 130  # Adjust this value to control tree detection sensitivity
 heightMap_resolution = 0.005  # meters
 slice_height = 2  # meters
 r_squared_threshold = 0.1
@@ -56,6 +56,14 @@ def detect_trees_in_max(canopy_height_model, threshold, filter_size):
     # Apply local maximum filtering to find peaks
     neighborhood_size = (filter_size, filter_size)
     local_max = maximum_filter(canopy_height_model, footprint=np.ones(neighborhood_size), mode='constant')
+    #print("threshold")
+    #print(threshold)
+    #print("canonical height model shape")
+    #print(canopy_height_model.shape)
+    #print("local max shape")
+    #print(local_max.shape)
+    #print("local max")
+    #print(local_max)
     tree_mask = (canopy_height_model == local_max) & (canopy_height_model > threshold)
 
     # Find the indices of the tree locations
@@ -206,24 +214,22 @@ def detect_tubular_form2(point_cloud, query_coords, radius_threshold):
             if len(centroids) > 4 and not np.isnan(centroids).any():
 
                 r2 = calculate_r_squared(centroids)
+               # print("r2: ", r2)
+               # print("centroids: ", centroids)
 
                 is_line = r2 > r_squared_threshold
 
                 if is_line:
-                    #print("detected tree at: ", query_coord, " with r2: ", r2)
-                    #o3d.visualization.draw_geometries([pcd])
-                    #display_slice_with_centroids(filtered_points, centroids, True)
                     tubular_tree_locations.append(query_coord)
                 else:
-                   # print("not detected tree at: ", query_coord, " with r2: ", r2)
-                    #display_slice_with_centroids(filtered_points, centroids, False)
                     no_tubular_tree_locations.append(query_coord)
 
     # print(tubular_tree_locations)
-    # print(no_tubular_tree_locations)
+    #print("no tubular trees:")
+    #print(no_tubular_tree_locations)
     #display_original_cloud_with_centroids(point_cloud, tubular_tree_locations, no_tubular_tree_locations)
 
-    return tubular_tree_locations
+    return tubular_tree_locations, no_tubular_tree_locations
 
 
 
